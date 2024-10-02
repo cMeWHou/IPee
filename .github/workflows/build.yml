@@ -20,4 +20,4 @@ jobs:
 
     - name: Test
       working-directory: ${{github.workspace}}/build
-      run: ctest -C ${{env.BUILD_TYPE}} -V -T test --output-on-failure -R ^IPee_test$
+      run: ctest -C ${{env.BUILD_TYPE}} -V -T test --output-on-failure -R ^IpEe_test$
