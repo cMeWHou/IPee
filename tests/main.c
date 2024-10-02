@@ -21,10 +21,29 @@
  * STATIC FUNCTIONS DECLARATIONS
  **********************************************************************************************/
 
+/**
+ * @brief Compare two strings.
+ * 
+ * @param a First string.
+ * @param b Second string.
+ * @return 1 if equal, 0 else.
+ */
 static int is_equal(const char *a, const char *b);
 
+/**
+ * @brief Event test callback.
+ * 
+ * @param args Arguments.
+ * @param captured_args Captured arguments.
+ */
 static void event_test_callback(void *args, void *captured_args);
 
+/**
+ * @brief Task test callback.
+ * 
+ * @param args Arguments.
+ * @return Return value.
+ */
 static void *threadpool_test_callback(void *args);
 
 /*********************************************************************************************
@@ -50,7 +69,6 @@ int test_threadpool_OK(void);
 int main(void) {
     int exit_result = 0;
 
-printf("ENTER");
     exit_result |= test_dictionary_OK();
     exit_result |= test_container_OK();
     exit_result |= test_event_OK();
