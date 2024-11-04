@@ -54,7 +54,7 @@ static p_dictionary containers = NULL;
  * @details
  * Maximum number of transient references.
  */
-static const int MAX_TRANSIENT_REFS = 3;
+static int MAX_TRANSIENT_REFS = 3;
 
 /**
  * @brief Maximum container size.
@@ -62,11 +62,19 @@ static const int MAX_TRANSIENT_REFS = 3;
  * @details
  * Maximum number of services in container.
  */
-static const int MAX_CONTAINER_SIZE = 255;
+static int MAX_CONTAINER_SIZE = 255;
 
 /*********************************************************************************************
  * FUNCTIONS DEFINITIONS
  ********************************************************************************************/
+
+void set_max_service_count(int count) {
+    MAX_CONTAINER_SIZE = count;
+}
+
+void set_max_transient_service_count(int count) {
+    MAX_TRANSIENT_REFS = count;
+}
 
 p_dictionary get_all_containers(void) {
     return containers;

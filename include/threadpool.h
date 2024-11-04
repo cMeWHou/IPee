@@ -2,7 +2,7 @@
  * @file threadpool.h
  * @author chcp (cmewhou@yandex.ru)
  * @brief Common threadpool implementation.
- * @version 1.0
+ * @version 1.1
  * @date 2024-08-04
  *
  * @copyright Copyright (c) 2024
@@ -47,11 +47,25 @@ typedef struct thread_s {
  * FUNCTION TYPEDEFS
  **********************************************************************************************/
 
+/**
+ * @brief Task callback.
+ * @details A task to complete. It is called when there is a free thread.
+ * 
+ * @param args Task arguments.
+ * @return Task result.
+ */
 typedef void *(threadpool_task_callback)(void *args);
 
 /*********************************************************************************************
  * FUNCTIONS DECLARATIONS
  ********************************************************************************************/
+
+/**
+ * @brief Set thread pool size.
+ * 
+ * @param size Thread pool size.
+ */
+extern void set_threadpool_size(int size);
 
 /**
  * @brief Initialize thread pool.
