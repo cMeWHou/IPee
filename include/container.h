@@ -2,8 +2,8 @@
  * @file container.h
  * @author chcp (cmewhou@yandex.ru)
  * @brief Common container for global access to application services.
- * @version 1.3
- * @date 2024-07-23
+ * @version 1.4
+ * @date 2024-11-04
  *
  * @copyright Copyright (c) 2024
  */
@@ -319,7 +319,7 @@ extern void add_service_to_container_by_name(const char *name, const service_typ
                                              void *args);
 
 /**
- * @brief Get the service from global container object
+ * @brief Get the service from global container object.
  * 
  * @details
  * Returns specified service instance if it is defined.
@@ -340,6 +340,20 @@ extern void *get_service_from_global_container(char *key);
  * @return Service instance.
  */
 extern void *get_service_from_container(p_container container, char *key);
+
+/**
+ * @brief Get service instance from container with arguments.
+ *
+ * @details
+ * Returns specified service instance if it is defined.
+ * 
+ * @param container Container reference.
+ * @param key Service identifier.
+ * @param tmp_args Arguments.
+ * @return Service instance.
+ */
+extern void *get_service_from_container_with_args(p_container container, char *key, void *tmp_args);
+
 
 /**
  * @brief Get service instance from container by name.
