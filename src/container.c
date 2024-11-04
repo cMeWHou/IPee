@@ -275,6 +275,10 @@ void *get_service_from_global_container(char *key) {
 }
 
 void *get_service_from_container(p_container container, char *key) {
+    return get_service_from_container_with_args(container, key, NULL);
+}
+
+void *get_service_from_container_with_args(p_container container, char *key, void *tmp_args) {
     p_application_container app_container = (p_application_container)container;
 
     service_type_t type = (service_type_t)get_value_from_dictionary(app_container->elements_types, key);
@@ -284,6 +288,8 @@ void *get_service_from_container(p_container container, char *key) {
         if (!instance) {
             container_callback_function initial_callback = get_value_from_dictionary(app_container->elements_initial_callback, key);
             void *args = get_value_from_dictionary(app_container->elements_args, key);
+            if (tmp_args)
+                args = tmp_args;
 
             instance = initial_callback(args);
             update_record_in_dictionary(app_container->elements_refs, key, instance);
@@ -293,6 +299,9 @@ void *get_service_from_container(p_container container, char *key) {
 
     case SERVICE_TYPE_TRANSIENT:
         void *args = get_value_from_dictionary(app_container->elements_args, key);
+        if (tmp_args)
+            args = tmp_args;
+
         p_dictionary refs = get_value_from_dictionary(app_container->elements_refs, key);
         if (refs->size >= MAX_TRANSIENT_REFS) {
             pthread_mutex_lock(&app_container->mutex);
