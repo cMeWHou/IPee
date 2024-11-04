@@ -6,8 +6,6 @@
 #include <macro.h>
 #include <event.h>
 
-#define THREAD_POOL_SIZE 8
-
 /***********************************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
  **********************************************************************************************/
@@ -31,14 +29,28 @@ static void *task_invoker(p_thread thread);
 static void set_task_to_thread(p_thread thread, threadpool_task_callback task_callback, p_task task, void *args);
 
 /*********************************************************************************************
- * TU VARIABLES
+ * STATIC VARIABLES
  ********************************************************************************************/
 
-p_thread thread_pool = NULL;
+/**
+ * @brief The thread pool.
+ */
+static p_thread thread_pool = NULL;
+
+/**
+ * @brief The thread pool size.
+ */
+static int THREAD_POOL_SIZE = 8;
 
 /*********************************************************************************************
  * FUNCTIONS DEFINITIONS
  ********************************************************************************************/
+
+void set_threadpool_size(int size) {
+    if (thread_pool == NULL) {
+        THREAD_POOL_SIZE = size;
+    }
+}
 
 void init_thread_pool(void) {
     if (!thread_pool) {
@@ -80,6 +92,7 @@ void destroy_thread_pool(void) {
             pthread_cancel(thread_pool[i].thread);
         }
         free(thread_pool);
+        thread_pool = NULL;
     }
 }
 
