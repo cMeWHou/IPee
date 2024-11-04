@@ -337,8 +337,9 @@ static void release_service(char *key, container_callback_function callback, p_a
 
     case SERVICE_TYPE_TRANSIENT:
         p_dictionary refs = get_value_from_dictionary(container->elements_refs, key);
-        container_callback_function release_callback = get_value_from_dictionary(container->elements_release_callback, key);
-        iterate_over_dictionary_values(refs, (void *)release_callback);
+        if (refs && callback) {
+            iterate_over_dictionary_values(refs, (void *)callback);
+        }
         delete_dictionary(refs);
         break;
 
