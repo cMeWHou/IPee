@@ -2,7 +2,7 @@
  * @file container.h
  * @author chcp (cmewhou@yandex.ru)
  * @brief Common container for global access to application services.
- * @version 1.2
+ * @version 1.3
  * @date 2024-07-23
  *
  * @copyright Copyright (c) 2024
@@ -54,6 +54,22 @@ typedef void *(*container_callback_function)(void *args);
 /*********************************************************************************************
  * FUNCTIONS DECLARATIONS
  ********************************************************************************************/
+
+/**
+ * @brief Set max transient service count.
+ * 
+ * @param count Max transient service count.
+ */
+
+extern void set_max_service_count(int count);
+
+/**
+ * @brief Set max transient service count.
+ * 
+ * @param count Max transient service count.
+ */
+
+extern void set_max_transient_service_count(int count);
 
 /**
  * @brief Get the all containers object
