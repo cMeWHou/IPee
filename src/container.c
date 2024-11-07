@@ -94,6 +94,8 @@ p_container init_container(const char *name) {
         return get_container(name);
 
     p_application_container app_container = (p_application_container)malloc(sizeof(application_container_t));
+    if (!app_container) return NULL;
+
     app_container->name = name;
     app_container->services = create_dictionary();
     app_container->elements_types = create_dictionary();
@@ -113,20 +115,20 @@ void release_container(p_container container) {
 
     p_application_container app_container = (p_application_container)container;
     pthread_mutex_lock(&app_container->mutex);
-    iterate_over_dictionary_with_args(app_container->elements_release_callback, (void *)release_service, app_container);
-    delete_dictionary(app_container->services);
-    delete_dictionary(app_container->elements_types);
-    delete_dictionary(app_container->elements_initial_callback);
-    delete_dictionary(app_container->elements_release_callback);
-    delete_dictionary(app_container->elements_args);
-    delete_dictionary(app_container->elements_refs);
+    if (app_container) {
+        iterate_over_dictionary_with_args(app_container->elements_release_callback, (void *)release_service, app_container);
+        delete_dictionary(app_container->services);
+        delete_dictionary(app_container->elements_types);
+        delete_dictionary(app_container->elements_initial_callback);
+        delete_dictionary(app_container->elements_release_callback);
+        delete_dictionary(app_container->elements_args);
+        delete_dictionary(app_container->elements_refs);
+    }
     pthread_mutex_unlock(&app_container->mutex);
     pthread_mutex_destroy(&app_container->mutex);
     remove_record_from_dictionary(containers, container->name);
     
     free(container);
-    container = NULL;
-
     if (containers->size == 0)
         delete_dictionary(containers);
 }
@@ -219,42 +221,43 @@ void add_service_to_container(p_container container, const service_type_t type, 
 
     p_application_container app_container = (p_application_container)container;
     pthread_mutex_lock(&app_container->mutex);
-    container_callback_function callback = get_value_from_dictionary(app_container->elements_release_callback, key);
-    if (callback)
-        release_service(key, callback, container);
+    if (app_container) {
+        container_callback_function callback = get_value_from_dictionary(app_container->elements_release_callback, key);
+        if (callback)
+            release_service(key, callback, container);
 
-    switch (type) {
-    case SERVICE_TYPE_SINGLETON:
-        add_record_to_dictionary(app_container->services, app_container->services->size, key);
-        add_record_to_dictionary(app_container->elements_types, key, (void *)SERVICE_TYPE_SINGLETON);
-        add_record_to_dictionary(app_container->elements_initial_callback, key, initial_callback);
-        add_record_to_dictionary(app_container->elements_release_callback, key, release_callback);
-        add_record_to_dictionary(app_container->elements_refs, key, NULL);
-        add_record_to_dictionary(app_container->elements_args, key, args);
-        break;
+        switch (type) {
+        case SERVICE_TYPE_SINGLETON:
+            add_record_to_dictionary(app_container->services, app_container->services->size, key);
+            add_record_to_dictionary(app_container->elements_types, key, (void *)SERVICE_TYPE_SINGLETON);
+            add_record_to_dictionary(app_container->elements_initial_callback, key, initial_callback);
+            add_record_to_dictionary(app_container->elements_release_callback, key, release_callback);
+            add_record_to_dictionary(app_container->elements_refs, key, NULL);
+            add_record_to_dictionary(app_container->elements_args, key, args);
+            break;
 
-    case SERVICE_TYPE_TRANSIENT:
-        add_record_to_dictionary(app_container->services, app_container->services->size, key);
-        add_record_to_dictionary(app_container->elements_types, key, (void *)SERVICE_TYPE_TRANSIENT);
-        add_record_to_dictionary(app_container->elements_initial_callback, key, initial_callback);
-        add_record_to_dictionary(app_container->elements_release_callback, key, release_callback);
-        add_record_to_dictionary(app_container->elements_refs, key, create_dictionary());
-        add_record_to_dictionary(app_container->elements_args, key, args);
-        break;
+        case SERVICE_TYPE_TRANSIENT:
+            add_record_to_dictionary(app_container->services, app_container->services->size, key);
+            add_record_to_dictionary(app_container->elements_types, key, (void *)SERVICE_TYPE_TRANSIENT);
+            add_record_to_dictionary(app_container->elements_initial_callback, key, initial_callback);
+            add_record_to_dictionary(app_container->elements_release_callback, key, release_callback);
+            add_record_to_dictionary(app_container->elements_refs, key, create_dictionary());
+            add_record_to_dictionary(app_container->elements_args, key, args);
+            break;
 
-    case SERVICE_TYPE_GLBLVALUE:
-        add_record_to_dictionary(app_container->services, app_container->services->size, key);
-        add_record_to_dictionary(app_container->elements_types, key, (void *)SERVICE_TYPE_GLBLVALUE);
-        add_record_to_dictionary(app_container->elements_initial_callback, key, NULL);
-        add_record_to_dictionary(app_container->elements_release_callback, key, release_callback);
-        add_record_to_dictionary(app_container->elements_args, key, args);
-        break;
+        case SERVICE_TYPE_GLBLVALUE:
+            add_record_to_dictionary(app_container->services, app_container->services->size, key);
+            add_record_to_dictionary(app_container->elements_types, key, (void *)SERVICE_TYPE_GLBLVALUE);
+            add_record_to_dictionary(app_container->elements_initial_callback, key, NULL);
+            add_record_to_dictionary(app_container->elements_release_callback, key, release_callback);
+            add_record_to_dictionary(app_container->elements_args, key, args);
+            break;
 
-    default:
-        exit(-1);
-        break;
+        default:
+            exit(-1);
+            break;
+        }
     }
-
     pthread_mutex_unlock(&app_container->mutex);
 }
 
@@ -305,12 +308,12 @@ void *get_service_from_container_with_args(p_container container, char *key, voi
         p_dictionary refs = get_value_from_dictionary(app_container->elements_refs, key);
         if (refs->size >= MAX_TRANSIENT_REFS) {
             pthread_mutex_lock(&app_container->mutex);
-
-            void *head_value = get_head_value_from_dictionary(refs);
-            container_callback_function release_callback = get_value_from_dictionary(app_container->elements_release_callback, key);
-            release_callback(head_value);
-            remove_record_from_dictionary_by_index(refs, 0);
-
+            if (refs->size) {
+                void *head_value = get_head_value_from_dictionary(refs);
+                container_callback_function release_callback = get_value_from_dictionary(app_container->elements_release_callback, key);
+                release_callback(head_value);
+                remove_record_from_dictionary_by_index(refs, 0);
+            }
             pthread_mutex_unlock(&app_container->mutex);
         }
 

@@ -18,29 +18,30 @@
  ********************************************************************************************/
 
 /**
+ * @brief Task metainformation.
+ */
+typedef struct task_metadata_s {
+    void *(*callback)(void *args); // Task callback.
+    void *args;                    // Task arguments.
+    pthread_t *thread;             // Thread Id.
+} task_metadata_t, *p_task_metadata;
+
+/**
  * @brief Task information.
  */
 typedef struct task_s {
-    volatile int is_done;   // Task is done.
-    void *result;           // Task result.
+    volatile int is_done;               // Task is done.
+    void *result;                       // Task result.
+    p_task_metadata metadata;           // Task metainformation.
 } task_t, *p_task;
-
-/**
- * @brief Task metainformation.
- */
-typedef struct task_data_s {
-    p_task task;                        // Task information.
-    void *(*task_callback)(void *args); // Task callback.
-    void *args;                         // Task arguments.
-} task_data_t, *p_task_data;
 
 /**
  * @brief Thread data.
  */
 typedef struct thread_s {
-    int is_buzy;                    // Thread is buzy.
-    pthread_t thread;               // Thread ID.
-    volatile p_task_data task_data; // Task metainformation.
+    int is_buzy;          // Thread is buzy.
+    pthread_t thread;     // Thread Id.
+    volatile p_task task; // Task metainformation.
 } thread_t, *p_thread;
 
 /***********************************************************************************************
@@ -80,6 +81,23 @@ extern void init_thread_pool(void);
  * @return Task.
  */
 extern p_task make_task(threadpool_task_callback task_callback, void *args);
+
+/**
+ * @brief Run task.
+ * 
+ * @param task Task.
+ * @return Task.
+ */
+extern p_task run_task(p_task task);
+
+/**
+ * @brief Start new task.
+ * 
+ * @param task_callback Task callback.
+ * @param args Task arguments.
+ * @return Task.
+ */
+extern p_task start_task(threadpool_task_callback task_callback, void *args);
 
 /**
  * @brief Await task.
