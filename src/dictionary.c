@@ -9,6 +9,8 @@
 
 p_dictionary create_dictionary(void) {
     p_dictionary dict = (p_dictionary)malloc(sizeof(dictionary_t));
+    if (!dict) return NULL;
+
     dict->size = 0;
     dict->head = NULL;
     dict->tail = NULL;
@@ -17,6 +19,8 @@ p_dictionary create_dictionary(void) {
 
 p_dictionary create_dictionary_with_metadata(void *metadata) {
     p_dictionary dict = (p_dictionary)malloc(sizeof(dictionary_t));
+    if (!dict) return NULL;
+
     dict->size = 0;
     dict->head = NULL;
     dict->tail = NULL;
@@ -25,7 +29,7 @@ p_dictionary create_dictionary_with_metadata(void *metadata) {
 }
 
 void delete_dictionary(p_dictionary dict) {
-    if (!dict) return;
+    if (!dict) exit(1);
 
     p_record current = dict->head;
     while (current) {
@@ -34,7 +38,6 @@ void delete_dictionary(p_dictionary dict) {
         current = next;
     }
     free(dict);
-    dict = NULL;
 }
 
 void add_record_to_dictionary(const p_dictionary dict, char *key, void *value) {

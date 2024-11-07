@@ -128,7 +128,7 @@ int test_threadpool_OK(void) {
     const char *event = "test";
 
     char *expected = "testValue";
-    p_task task = make_task(threadpool_test_callback, expected);
+    p_task task = start_task(threadpool_test_callback, expected);
     char *actual = await_task(task);
     destroy_thread_pool();
 
