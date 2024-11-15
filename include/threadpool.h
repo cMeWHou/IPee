@@ -49,10 +49,10 @@ typedef struct task_s {
  * @brief Thread data.
  */
 typedef struct thread_s {
-    int is_buzy;          // Thread is buzy.
-    int is_running;       // Thread is running.
-    pthread_t thread;     // Thread Id.
-    volatile p_task task; // Task metainformation.
+    int is_buzy;             // Thread is buzy.
+    volatile int is_running; // Thread is running.
+    pthread_t thread;        // Thread Id.
+    volatile p_task task;    // Task metainformation.
 } thread_t, *p_thread;
 
 /***********************************************************************************************
