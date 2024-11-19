@@ -2,8 +2,8 @@
  * @file dictionary.h
  * @author chcp (cmewhou@yandex.ru)
  * @brief Common implementation of an <key:value> pair collection based on a linked list.
- * @version 1.2
- * @date 2024-07-23
+ * @version 1.3
+ * @date 2024-11-18
  * 
  * @copyright Copyright (c) 2024
  ********************************************************************************************/
@@ -21,7 +21,7 @@
  * @details
  * Record is a node of linked list.
  * Record is <key:value> pair. It contains a key, value and reference to next node.
- * key - string value.
+ * key - string value or pointer-value.
  * value - pointer to any type value.
  * next - reference to next node.
  * prev - reference to previous node.
@@ -247,9 +247,9 @@ extern p_dictionary create_dictionary_with_metadata(void *metadata);
  * @details
  * Delete dictionary and all its records.
  *
- * @param dict Dictionary object.
+ * @param dict Dictionary object reference.
  */
-extern void delete_dictionary(p_dictionary dict);
+extern void delete_dictionary(p_dictionary *dict);
 
 /**
  * @brief Add record to dictionary.
@@ -265,6 +265,19 @@ extern void delete_dictionary(p_dictionary dict);
 extern void add_record_to_dictionary(const p_dictionary dict, char *key, void *value);
 
 /**
+ * @brief Add record to begin of dictionary.
+ * 
+ * @details 
+ * Add a new record to specified dictionary.
+ * The record is identified by string key and contains value of any type.
+ *
+ * @param dict Dictionary object.
+ * @param key Record key.
+ * @param value Record value.
+ */
+extern void emplace_record_to_dictionary(const p_dictionary dict, char *key, void *value);
+
+/**
  * @brief Add record to dictionary.
  * 
  * @details 
@@ -278,6 +291,20 @@ extern void add_record_to_dictionary(const p_dictionary dict, char *key, void *v
  */
 extern void add_record_to_dictionary_with_metadata(const p_dictionary dict, char *key,
                                                    void *value, void *metadata);
+
+/**
+ * @brief Add record to begin of dictionary.
+ * 
+ * @details 
+ * Add a new record to specified dictionary.
+ * The record is identified by string key and contains value of any type.
+ *
+ * @param dict Dictionary object.
+ * @param key Record key.
+ * @param value Record value.
+ * @param metadata Record metadata.
+ */
+extern void emplace_record_to_dictionary_with_metadata(const p_dictionary dict, char *key, void *value, void *metadata);
 
 /**
  * @brief Add record to dictionary by index.
