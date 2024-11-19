@@ -1,6 +1,8 @@
 #include <event.h>
 
 #include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
 #include <dictionary.h>
 #include <macro.h>
@@ -43,6 +45,20 @@ static p_dictionary init_event(p_dictionary event_context, const char *name);
  */
 static void callback_invoker(p_record record, void *args);
 
+
+/**
+ * @brief Get event name.
+ * 
+ * @details
+ * Get event name.
+ * 
+ * @param context Context name.
+ * @param event Event name.
+ * @param uniq_id Unique id.
+ * @return Event name.
+ */
+static char *get_event_name(const char *context, const char *event, const int uniq_id);
+
 /*********************************************************************************************
  * STATIC VARIABLES
  ********************************************************************************************/
@@ -59,64 +75,105 @@ static p_dictionary events = NULL;
  * FUNCTIONS DEFINITIONS
  ********************************************************************************************/
 
-void global_subscribe(const char *event_name, observable_callback callback) {
-    subscribe(name_of(global), event_name, callback);
+p_dictionary get_context_list(void) {
+    return events;
 }
 
-void subscribe(const char *context, const char *event_name, observable_callback callback) {
-    subscribe_with_args(context, event_name, callback, NULL);
+extern p_dictionary get_context_events(const char *context_name) {
+    if (!events) return NULL;
+
+    return get_value_from_dictionary(events, context_name);
+}
+
+extern p_dictionary get_context_event_subscribers(const char *context_name, const char *event_name) {
+    if (!events) return NULL;
+    p_dictionary context = (p_dictionary)get_value_from_dictionary(events, context_name);
+
+    if (!context) return NULL;
+    return get_value_from_dictionary(context, event_name);
+}
+
+void global_subscribe(const char *event_name, observable_callback callback) {
+    global_subscribe_with_args(event_name, callback, NULL);
 }
 
 void global_subscribe_with_args(const char *event_name, observable_callback_with_args callback, void *args) {
     subscribe_with_args(name_of(global), event_name, callback, args);
 }
 
-void subscribe_with_args(const char *context, const char *event_name,
+void subscribe(const char *context, const char *event_name, observable_callback callback) {
+    subscribe_with_args(context, event_name, callback, NULL);
+}
+
+void subscribe_with_args(const char *context_name, const char *event_name,
                          observable_callback_with_args callback, void *args) {
     if (!events)
         events = create_dictionary();
 
-    p_dictionary event_context = (p_dictionary)get_value_from_dictionary(events, context);
-    if (!event_context)
-        event_context = init_event_context(context);
+    p_dictionary context = (p_dictionary)get_value_from_dictionary(events, context_name);
+    if (!context)
+        context = init_event_context(context_name);
 
-    p_dictionary event = (p_dictionary)get_value_from_dictionary(event_context, event_name);
+    p_dictionary event = (p_dictionary)get_value_from_dictionary(context, event_name);
     if (!event)
-        event = init_event(event_context, event_name);
+        event = init_event(context, event_name);
 
-    add_record_to_dictionary_with_metadata(event, event->size, callback, args);
+    char *key = get_event_name(context_name, event_name, event->size);
+    add_record_to_dictionary_with_metadata(event, key, callback, args);
 }
 
 void global_unsubscribe(const char *event_name, observable_callback callback) {
     unsubscribe(name_of(global), event_name, callback);
 }
 
-void unsubscribe(const char *context, const char *event_name, observable_callback callback) {
-    p_dictionary event_context = (p_dictionary)get_value_from_dictionary(events, context);
-    if (!event_context)
-        return;
+void unsubscribe(const char *context_name, const char *event_name, observable_callback callback) {
+    if (!events) exit(IPEE_ERROR_CODE__EVENT__SERVICE_UNINITIALIZED);
 
-    p_dictionary event = (p_dictionary)get_value_from_dictionary(event_context, event_name);
-    if (!event)
-        return;
+    p_dictionary context = (p_dictionary)get_value_from_dictionary(events, context_name);
+    if (!context) exit(IPEE_ERROR_CODE__EVENT__CONTEXT_NOT_EXISTS);
+
+    p_dictionary event = (p_dictionary)get_value_from_dictionary(context, event_name);
+    if (!event) exit(IPEE_ERROR_CODE__EVENT__NOT_EXISTS);
 
     p_record record = (p_record)get_record_from_dictionary_by_value(event, callback);
-    if (!record)
-        return;
+    if (!record) exit(IPEE_ERROR_CODE__EVENT__INVALID_CALLBACK);
     
-    remove_record_from_dictionary_by_index(event, record->key);
+    char *key = record->key;
+    remove_record_from_dictionary(event, record->key);
+    free(key);
+
     if (!event->size) {
-        delete_dictionary(event);
-        remove_record_from_dictionary(event_context, event_name);
+        remove_record_from_dictionary(context, event_name);
+        delete_dictionary(&event);
     }
 
-    if (!event_context->size) {
-        delete_dictionary(event_context);
-        remove_record_from_dictionary(events, context);
+    if (!context->size) {
+        remove_record_from_dictionary(events, context_name);
+        delete_dictionary(&context);
     }
 
     if (!events->size)
-        delete_dictionary(events);
+        delete_dictionary(&events);
+}
+
+void unsubscribe_from_event(const char *context, const char *event_name) {   
+    p_dictionary subscribers = get_context_event_subscribers(context, event_name);
+    p_record current = subscribers ? subscribers->head : NULL;
+    while(current) {
+        p_record next = current->next;
+        unsubscribe(context, event_name, current->value);
+        current = next;
+    }
+}
+
+void unsubscribe_from_context(const char *context) {
+    p_dictionary context_events = get_context_events(context);
+    p_record current = context_events ? context_events->head : NULL;
+    while(current) {
+        p_record next = current->next;
+        unsubscribe_from_event(context, current->key);
+        current = next;
+    }
 }
 
 void global_notify(const char *event, void *args) {
@@ -124,14 +181,15 @@ void global_notify(const char *event, void *args) {
 }
 
 void notify(const char *context_name, const char *event_name, void *args) {
+    if (!events) exit(IPEE_ERROR_CODE__EVENT__SERVICE_UNINITIALIZED);
+
     p_dictionary context = (p_dictionary)get_value_from_dictionary(events, context_name);
+    if (!context) exit(IPEE_ERROR_CODE__EVENT__CONTEXT_NOT_EXISTS);
+
     p_dictionary event = (p_dictionary)get_value_from_dictionary(context, event_name);
+    if (!event) exit(IPEE_ERROR_CODE__EVENT__NOT_EXISTS);
 
     iterate_over_dictionary_records_with_args(event, callback_invoker, args);
-}
-
-p_dictionary get_subscriptions(void) {
-    return events;
 }
 
 /***********************************************************************************************
@@ -167,4 +225,16 @@ static void callback_invoker(p_record record, void *args) {
 
     observable_callback_with_args callback = value;
     callback(args, captured_args);
+}
+
+static char *get_event_name(const char *context, const char *event, const int uniq_id) {
+    const int id_size = uniq_id * 10 > 9 
+        ? uniq_id * 10 > 99 
+            ? uniq_id * 10 > 999
+                ? 4 : 3 : 2 : 1;
+
+    const char *event_name = malloc(strlen(context) + 1 + strlen(event) + 1 + id_size + 1);
+    sprintf(event_name, "%s_%s_%d", context, event, uniq_id);
+
+    return event_name;
 }

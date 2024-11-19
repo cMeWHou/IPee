@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <macro.h>
+
 /***********************************************************************************************
  * FUNCTIONS DEFINITIONS
  **********************************************************************************************/
@@ -14,6 +16,8 @@ p_dictionary create_dictionary(void) {
     dict->size = 0;
     dict->head = NULL;
     dict->tail = NULL;
+    dict->metadata = NULL;
+
     return dict;
 }
 
@@ -25,39 +29,30 @@ p_dictionary create_dictionary_with_metadata(void *metadata) {
     dict->head = NULL;
     dict->tail = NULL;
     dict->metadata = metadata;
+
     return dict;
 }
 
-void delete_dictionary(p_dictionary dict) {
-    if (!dict) exit(1);
+void delete_dictionary(p_dictionary *dict) {
+    if (!dict || !(*dict)) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
 
-    p_record current = dict->head;
+    p_record current = (*dict)->head;
     while (current) {
         p_record next = current->next;
         free(current);
         current = next;
     }
-    free(dict);
+    free(*dict);
+    (*dict) = NULL;
 }
 
 void add_record_to_dictionary(const p_dictionary dict, char *key, void *value) {
-    p_record record = (p_record)malloc(sizeof(record_t));
-    record->key = key;
-    record->value = value;
-    record->next = NULL;
-    record->prev = dict->tail;
-
-    if (!dict->size) {
-        dict->head = record;
-        dict->tail = record;
-    } else {
-        dict->tail->next = record;
-        dict->tail = record;
-    }
-    dict->size++;
+    add_record_to_dictionary_with_metadata(dict, key, value, NULL);
 }
 
 void add_record_to_dictionary_with_metadata(const p_dictionary dict, char *key, void *value, void *metadata) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     p_record record = (p_record)malloc(sizeof(record_t));
     record->key = key;
     record->value = value;
@@ -75,32 +70,21 @@ void add_record_to_dictionary_with_metadata(const p_dictionary dict, char *key, 
     dict->size++;
 }
 
-void add_record_to_dictionary_by_index(const p_dictionary dict, int index,  char *key, void *value) {
-    p_record record = (p_record)malloc(sizeof(record_t));
-    record->key = key;
-    record->value = value;
-    record->next = NULL;
-    record->prev = NULL;
+void emplace_record_to_dictionary(const p_dictionary dict, char *key, void *value) {
+    add_record_to_dictionary_by_index(dict, 0, key, value);
+}
 
-    p_record current = get_record_from_dictionary_by_index(dict, index);
-    if (current) {
-        if (dict->head == current) {
-            record->next = current;
-            current->prev = record;
-            dict->head = record;
-        } else {
-            record->next = current;
-            record->prev = current->prev;
-            if (current)
-                current->prev = record;
-            if (current->prev)
-                current->prev->next = record;
-        }
-        dict->size++;
-    }
+void emplace_record_to_dictionary_with_metadata(const p_dictionary dict, char *key, void *value, void *metadata) {
+    add_record_to_dictionary_by_index_with_metadata(dict, 0, key, value, metadata);
+}
+
+void add_record_to_dictionary_by_index(const p_dictionary dict, int index,  char *key, void *value) {
+    add_record_to_dictionary_by_index_with_metadata(dict, index, key, value, NULL);
 }
 
 void add_record_to_dictionary_by_index_with_metadata(const p_dictionary dict, int index,  char *key, void *value, void *metadata) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+    
     p_record record = (p_record)malloc(sizeof(record_t));
     record->key = key;
     record->value = value;
@@ -117,10 +101,12 @@ void add_record_to_dictionary_by_index_with_metadata(const p_dictionary dict, in
         } else {
             record->next = current;
             record->prev = current->prev;
-            if (current)
+           
+            if (current) {
+                if (current->prev)
+                    current->prev->next = record;
                 current->prev = record;
-            if (current->prev)
-                current->prev->next = record;
+            }
         }
         dict->size++;
     }
@@ -128,6 +114,8 @@ void add_record_to_dictionary_by_index_with_metadata(const p_dictionary dict, in
 
 
 void remove_record_from_dictionary(const p_dictionary dict, char *key) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     p_record current = dict->head;
     p_record prev = NULL;
     while (current) {
@@ -142,7 +130,6 @@ void remove_record_from_dictionary(const p_dictionary dict, char *key) {
                     current->next->prev = NULL;
             }
             free(current);
-            current = NULL;
             dict->size--;
             return;
         }
@@ -152,6 +139,9 @@ void remove_record_from_dictionary(const p_dictionary dict, char *key) {
 }
 
 void remove_record_from_dictionary_by_index(const p_dictionary dict, int index) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+    if (index < 0 && index >= dict->size) exit(IPEE_ERROR_CODE__DICTIONARY__INDEX_OUT_OF_RANGE);
+
     p_record current = dict->head;
     p_record prev = NULL;
     for (int i = 0; i < index; i++) {
@@ -170,7 +160,6 @@ void remove_record_from_dictionary_by_index(const p_dictionary dict, int index) 
             current->next->prev = NULL;
     }
     free(current);
-    current = NULL;
     dict->size--;
 }
 
@@ -180,18 +169,18 @@ void update_record_in_dictionary(const p_dictionary dict, char *key, void *value
         record->value = value;
 }
 
-void update_record_in_dictionary_by_index(const p_dictionary dict, int index, void *value) {
+void update_record_in_dictionary_by_index(const p_dictionary dict, int index, void *value) {    
     p_record record = get_record_from_dictionary_by_index(dict, index);
     if (record)
         record->value = value;
 }
 
 int contains_key_in_dictionary(const p_dictionary dict, char *key) {
-    return get_record_from_dictionary(dict, key) != NULL;
+    return get_record_from_dictionary(dict, key);
 }
 
 int contains_value_in_dictionary(const p_dictionary dict, void *value) {
-    return get_record_from_dictionary_by_value(dict, value) != NULL;
+    return get_record_from_dictionary_by_value(dict, value);
 }
 
 void *get_value_from_dictionary(const p_dictionary dict, char *key) {
@@ -200,12 +189,16 @@ void *get_value_from_dictionary(const p_dictionary dict, char *key) {
 }
 
 void *get_head_value_from_dictionary(const p_dictionary dict) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     if (dict->head)
         return dict->head->value;
     return NULL;
 }
 
 void *get_tail_value_from_dictionary(const p_dictionary dict) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     if (dict->tail)
         return dict->tail->value;
     return NULL;
@@ -222,12 +215,16 @@ void *get_prev_value_from_dictionary(const p_dictionary dict, char *key) {
 }
 
 void *get_head_key_from_dictionary(const p_dictionary dict) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     if (dict->head)
         return dict->head->key;
     return NULL;
 }
 
 void *get_tail_key_from_dictionary(const p_dictionary dict) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     if (dict->tail)
         return dict->tail->key;
     return NULL;
@@ -244,6 +241,8 @@ void *get_prev_key_from_dictionary(const p_dictionary dict, char *key) {
 }
 
 p_record get_record_from_dictionary(const p_dictionary dict, char *key) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     p_record record = dict->head;
     while (record) {
         if (strcmp(record->key, key) == 0)
@@ -254,6 +253,8 @@ p_record get_record_from_dictionary(const p_dictionary dict, char *key) {
 }
 
 p_dictionary get_records_from_dictionary(const p_dictionary dict, char *key) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     p_dictionary records_dict = create_dictionary();
     p_record record = dict->head;
     while (record) {
@@ -265,6 +266,8 @@ p_dictionary get_records_from_dictionary(const p_dictionary dict, char *key) {
 }
 
 p_record get_record_from_dictionary_by_value(const p_dictionary dict, void *value) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     p_record record = dict->head;
     while (record) {
         if (record->value == value)
@@ -275,6 +278,8 @@ p_record get_record_from_dictionary_by_value(const p_dictionary dict, void *valu
 }
 
 p_dictionary get_records_from_dictionary_by_value(const p_dictionary dict, void *value) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     p_dictionary records_dict = create_dictionary();
     p_record record = dict->head;
     while (record) {
@@ -286,14 +291,21 @@ p_dictionary get_records_from_dictionary_by_value(const p_dictionary dict, void 
 }
 
 p_record get_head_record_from_dictionary(const p_dictionary dict) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     return dict->head;
 }
 
 p_record get_tail_record_from_dictionary(const p_dictionary dict) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     return dict->tail;
 }
 
 p_record get_record_from_dictionary_by_index(const p_dictionary dict, int index) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+    if (index < 0 && index >= dict->size) exit(IPEE_ERROR_CODE__DICTIONARY__INDEX_OUT_OF_RANGE);
+
     p_record record = dict->head;
     for (int i = 0; i < index; i++) {
         if (!record)
@@ -304,6 +316,8 @@ p_record get_record_from_dictionary_by_index(const p_dictionary dict, int index)
 }
 
 int get_index_from_dictionary_by_key(const p_dictionary dict, char *key) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     p_record record = dict->head;
     int index = 0;
     while (record) {
@@ -316,6 +330,8 @@ int get_index_from_dictionary_by_key(const p_dictionary dict, char *key) {
 }
 
 int get_index_from_dictionary_by_ref_record(const p_dictionary dict, p_record record) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     p_record current = dict->head;
     int index = 0;
     while (current) {
@@ -328,6 +344,8 @@ int get_index_from_dictionary_by_ref_record(const p_dictionary dict, p_record re
 }
 
 void iterate_over_dictionary(const p_dictionary dict, dictionary_iteration_callback callback) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     p_record current = dict->head;
     while (current) {
         p_record next = current->next;
@@ -337,6 +355,8 @@ void iterate_over_dictionary(const p_dictionary dict, dictionary_iteration_callb
 }
 
 void iterate_over_dictionary_with_args(const p_dictionary dict, dictionary_iteration_callback_with_args callback, void *args) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     p_record current = dict->head;
     while (current) {
         p_record next = current->next;
@@ -346,6 +366,8 @@ void iterate_over_dictionary_with_args(const p_dictionary dict, dictionary_itera
 }
 
 void iterate_over_dictionary_keys(const p_dictionary dict, dictionary_iteration_keys_callback callback) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     p_record current = dict->head;
     while (current) {
         p_record next = current->next;
@@ -355,6 +377,8 @@ void iterate_over_dictionary_keys(const p_dictionary dict, dictionary_iteration_
 }
 
 void iterate_over_dictionary_keys_with_args(const p_dictionary dict, dictionary_iteration_keys_callback_with_args callback, void *args) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     p_record current = dict->head;
     while (current) {
         p_record next = current->next;
@@ -364,6 +388,8 @@ void iterate_over_dictionary_keys_with_args(const p_dictionary dict, dictionary_
 }
 
 void iterate_over_dictionary_values(const p_dictionary dict, dictionary_iteration_values_callback callback) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     p_record current = dict->head;
     while (current) {
         p_record next = current->next;
@@ -373,6 +399,8 @@ void iterate_over_dictionary_values(const p_dictionary dict, dictionary_iteratio
 }
 
 void iterate_over_dictionary_values_with_args(const p_dictionary dict, dictionary_iteration_values_callback_with_args callback, void *args) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     p_record current = dict->head;
     while (current) {
         p_record next = current->next;
@@ -382,6 +410,8 @@ void iterate_over_dictionary_values_with_args(const p_dictionary dict, dictionar
 }
 
 void iterate_over_dictionary_records(const p_dictionary dict, dictionary_iteration_records_callback callback) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     p_record current = dict->head;
     while (current) {
         p_record next = current->next;
@@ -391,6 +421,8 @@ void iterate_over_dictionary_records(const p_dictionary dict, dictionary_iterati
 }
 
 void iterate_over_dictionary_records_with_args(const p_dictionary dict, dictionary_iteration_records_callback_with_args callback, void *args) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     p_record current = dict->head;
     while (current) {
         p_record next = current->next;
@@ -400,6 +432,8 @@ void iterate_over_dictionary_records_with_args(const p_dictionary dict, dictiona
 }
 
 p_dictionary map_dictionary(const p_dictionary dict, dictionary_iteration_callback_map callback) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     p_dictionary new_dict = create_dictionary();
     p_record current = dict->head;
     while (current) {
@@ -413,6 +447,8 @@ p_dictionary map_dictionary(const p_dictionary dict, dictionary_iteration_callba
 }
 
 p_dictionary map_dictionary_with_args(const p_dictionary dict, dictionary_iteration_callback_map_with_args callback, void *args) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     p_dictionary new_dict = create_dictionary();
     p_record current = dict->head;
     while (current) {
@@ -426,6 +462,8 @@ p_dictionary map_dictionary_with_args(const p_dictionary dict, dictionary_iterat
 }
 
 p_dictionary filter_dictionary(const p_dictionary dict, dictionary_iteration_callback_filter callback) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     p_dictionary new_dict = create_dictionary();
     p_record current = dict->head;
     while (current) {
@@ -439,6 +477,8 @@ p_dictionary filter_dictionary(const p_dictionary dict, dictionary_iteration_cal
 }
 
 p_dictionary filter_dictionary_with_args(const p_dictionary dict, dictionary_iteration_callback_filter_with_args callback, void *args) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     p_dictionary new_dict = create_dictionary();
     p_record current = dict->head;
     while (current) {
@@ -452,6 +492,8 @@ p_dictionary filter_dictionary_with_args(const p_dictionary dict, dictionary_ite
 }
 
 void *reduce_dictionary(const p_dictionary dict, dictionary_iteration_callback_reduce callback, void *acc) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     p_record current = dict->head;
     while (current) {
         int index = get_index_from_dictionary_by_ref_record(dict, current);
@@ -462,6 +504,8 @@ void *reduce_dictionary(const p_dictionary dict, dictionary_iteration_callback_r
 }
 
 void *reduce_dictionary_with_args(const p_dictionary dict, dictionary_iteration_callback_reduce_with_args callback, void *acc, void *args) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     p_record current = dict->head;
     while (current) {
         p_record next = current->next;
@@ -474,6 +518,8 @@ void *reduce_dictionary_with_args(const p_dictionary dict, dictionary_iteration_
 
 
 p_dictionary sort_dictionary(const p_dictionary dict, dictionary_iteration_callback_sort callback) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     p_dictionary new_dict = create_dictionary();
     p_record current = dict->head;
     while (current) {
@@ -502,6 +548,8 @@ p_dictionary sort_dictionary(const p_dictionary dict, dictionary_iteration_callb
 }
 
 p_dictionary sort_dictionary_with_args(const p_dictionary dict, dictionary_iteration_callback_sort_with_args callback, void *args) {
+    if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
+
     p_dictionary new_dict = create_dictionary();
     p_record current = dict->head;
     while (current) {
