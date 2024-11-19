@@ -81,7 +81,9 @@ p_dictionary get_all_containers(void) {
 }
 
 p_container get_container(const char *name) {
-    if (!containers || !contains_key_in_dictionary(containers, name))
+    if (!containers) exit(IPEE_ERROR_CODE__CONTAINER__SERVICE_UNINITIALIZED);
+
+    if (!contains_key_in_dictionary(containers, name))
         return NULL;
 
     return (p_container)get_value_from_dictionary(containers, name);
@@ -104,25 +106,29 @@ p_container init_container(const char *name) {
     app_container->elements_args = create_dictionary();
     app_container->elements_refs = create_dictionary();
     pthread_mutex_init(&app_container->mutex, NULL);
+    
     add_record_to_dictionary(containers, name, app_container);
 
     return (p_container)app_container;
 }
 
 void release_container(p_container container) {
-    if (!container || !contains_key_in_dictionary(containers, container->name))
+    if (!containers) exit(IPEE_ERROR_CODE__CONTAINER__SERVICE_UNINITIALIZED);
+    if (!container) exit(IPEE_ERROR_CODE__CONTAINER__NOT_EXISTS);
+
+    if (!contains_key_in_dictionary(containers, container->name))
         return;
 
     p_application_container app_container = (p_application_container)container;
     pthread_mutex_lock(&app_container->mutex);
     if (app_container) {
         iterate_over_dictionary_with_args(app_container->elements_release_callback, (void *)release_service, app_container);
-        delete_dictionary(app_container->services);
-        delete_dictionary(app_container->elements_types);
-        delete_dictionary(app_container->elements_initial_callback);
-        delete_dictionary(app_container->elements_release_callback);
-        delete_dictionary(app_container->elements_args);
-        delete_dictionary(app_container->elements_refs);
+        delete_dictionary(&app_container->services);
+        delete_dictionary(&app_container->elements_types);
+        delete_dictionary(&app_container->elements_initial_callback);
+        delete_dictionary(&app_container->elements_release_callback);
+        delete_dictionary(&app_container->elements_args);
+        delete_dictionary(&app_container->elements_refs);
     }
     pthread_mutex_unlock(&app_container->mutex);
     pthread_mutex_destroy(&app_container->mutex);
@@ -130,10 +136,12 @@ void release_container(p_container container) {
     
     free(container);
     if (containers->size == 0)
-        delete_dictionary(containers);
+        delete_dictionary(&containers);
 }
 
 void release_container_by_name(const char *name) {
+    if (!containers) exit(IPEE_ERROR_CODE__CONTAINER__SERVICE_UNINITIALIZED);
+
     if (!contains_key_in_dictionary(containers, name))
         return;
 
@@ -142,14 +150,13 @@ void release_container_by_name(const char *name) {
 }
 
 void release_all_containers(void) {
+    if (!containers) exit(IPEE_ERROR_CODE__CONTAINER__SERVICE_UNINITIALIZED);
+
     iterate_over_dictionary_values(containers, (void *)release_container);
 }
 
 void add_glblvalue_to_global_container(char *key, void *value, container_callback_function release_callback) {
-    p_container container = (p_container)get_value_from_dictionary(containers, name_of(global));
-    if (!container)
-        container = init_container(name_of(global));
-    add_service_to_container(container, SERVICE_TYPE_GLBLVALUE, key, NULL, release_callback, value);
+    add_service_to_global_container(SERVICE_TYPE_GLBLVALUE, key, NULL, release_callback, value);
 }
 
 void add_glblvalue_to_container(p_container container, char *key, void *value, container_callback_function release_callback) {
@@ -157,18 +164,16 @@ void add_glblvalue_to_container(p_container container, char *key, void *value, c
 }
 
 void add_glblvalue_to_container_by_name(const char *name, char *key, void *value, container_callback_function release_callback) {
+    if (!containers) exit(IPEE_ERROR_CODE__CONTAINER__SERVICE_UNINITIALIZED);
+
     p_container container = (p_container)get_value_from_dictionary(containers, name);
+    if (!container) exit(IPEE_ERROR_CODE__CONTAINER__NOT_EXISTS);
+
     add_service_to_container(container, SERVICE_TYPE_GLBLVALUE, key, NULL, release_callback, value);
 }
 
 void add_singleton_to_global_container(char *key, container_callback_function initial_callback, container_callback_function release_callback) {
-    if (!containers)
-        containers = create_dictionary();
-
-    p_container container = (p_container)get_value_from_dictionary(containers, name_of(global));
-    if (!container)
-        container = init_container(name_of(global));
-    add_service_to_container(container, SERVICE_TYPE_SINGLETON, key, initial_callback, release_callback, NULL);
+    add_service_to_global_container(SERVICE_TYPE_SINGLETON, key, initial_callback, release_callback, NULL);
 }
 
 void add_singleton_to_container(p_container container, char *key, container_callback_function initial_callback, container_callback_function release_callback) {
@@ -176,18 +181,16 @@ void add_singleton_to_container(p_container container, char *key, container_call
 }
 
 void add_singleton_to_container_by_name(const char *name, char *key, container_callback_function initial_callback, container_callback_function release_callback) {
+    if (!containers) exit(IPEE_ERROR_CODE__CONTAINER__SERVICE_UNINITIALIZED);
+    
     p_container container = (p_container)get_value_from_dictionary(containers, name);
+    if (!container) exit(IPEE_ERROR_CODE__CONTAINER__NOT_EXISTS);
+
     add_service_to_container(container, SERVICE_TYPE_SINGLETON, key, initial_callback, release_callback, NULL);
 }
 
 void add_transient_to_global_container(char *key, container_callback_function initial_callback, container_callback_function release_callback) {
-    if (!containers)
-        containers = create_dictionary();
-    
-    p_container container = (p_container)get_value_from_dictionary(containers, name_of(global));
-    if (!container)
-        container = init_container(name_of(global));
-    add_service_to_container(container, SERVICE_TYPE_TRANSIENT, key, initial_callback, release_callback, NULL);
+    add_service_to_global_container(SERVICE_TYPE_TRANSIENT, key, initial_callback, release_callback, NULL);
 }
 
 void add_transient_to_container(p_container container, char *key, container_callback_function initial_callback, container_callback_function release_callback) {
@@ -195,10 +198,11 @@ void add_transient_to_container(p_container container, char *key, container_call
 }
 
 void add_transient_to_container_by_name(const char *name, char *key, container_callback_function initial_callback, container_callback_function release_callback) {
-    if (!containers)
-        containers = create_dictionary();
+    if (!containers) exit(IPEE_ERROR_CODE__CONTAINER__SERVICE_UNINITIALIZED);
     
     p_container container = (p_container)get_value_from_dictionary(containers, name);
+    if (!container) exit(IPEE_ERROR_CODE__CONTAINER__NOT_EXISTS);
+
     add_service_to_container(container, SERVICE_TYPE_TRANSIENT, key, initial_callback, release_callback, NULL);
 }
 
@@ -206,9 +210,13 @@ void add_service_to_global_container(const service_type_t type, char *key,
                               container_callback_function initial_callback,
                               container_callback_function release_callback,
                               void *args) {
+    if (!containers)
+        containers = create_dictionary();
+
     p_container container = (p_container)get_value_from_dictionary(containers, name_of(global));
     if (!container)
         container = init_container(name_of(global));
+
     add_service_to_container(container, type, key, initial_callback, release_callback, args);
 }
 
@@ -216,7 +224,10 @@ void add_service_to_container(p_container container, const service_type_t type, 
                               container_callback_function initial_callback,
                               container_callback_function release_callback,
                               void *args) {
-    if (!container || container->services->size >= MAX_CONTAINER_SIZE)
+    if (!containers) exit(IPEE_ERROR_CODE__CONTAINER__SERVICE_UNINITIALIZED);
+    if (!container) exit(IPEE_ERROR_CODE__CONTAINER__NOT_EXISTS);
+
+    if (container->services->size >= MAX_CONTAINER_SIZE)
         return;
 
     p_application_container app_container = (p_application_container)container;
@@ -265,11 +276,17 @@ void add_service_to_container_by_name(const char *name, const service_type_t typ
                               container_callback_function initial_callback,
                               container_callback_function release_callback,
                               void *args) {
+    if (!containers) exit(IPEE_ERROR_CODE__CONTAINER__SERVICE_UNINITIALIZED);
+
     p_container container = (p_container)get_value_from_dictionary(containers, name);
+    if (!container) exit(IPEE_ERROR_CODE__CONTAINER__NOT_EXISTS);
+
     add_service_to_container(container, type, key, initial_callback, release_callback, args);
 }
 
 void *get_service_from_global_container(char *key) {
+    if (!containers) exit(IPEE_ERROR_CODE__CONTAINER__SERVICE_UNINITIALIZED);
+
     p_container container = (p_container)get_value_from_dictionary(containers, name_of(global));
     if (!container)
         return NULL;
@@ -282,6 +299,9 @@ void *get_service_from_container(p_container container, char *key) {
 }
 
 void *get_service_from_container_with_args(p_container container, char *key, void *tmp_args) {
+    if (!containers) exit(IPEE_ERROR_CODE__CONTAINER__SERVICE_UNINITIALIZED);
+    if (!container) exit(IPEE_ERROR_CODE__CONTAINER__NOT_EXISTS);
+
     p_application_container app_container = (p_application_container)container;
 
     service_type_t type = (service_type_t)get_value_from_dictionary(app_container->elements_types, key);
@@ -330,7 +350,11 @@ void *get_service_from_container_with_args(p_container container, char *key, voi
 }
 
 void *get_service_from_container_by_name(const char *name, char *key) {
+    if (!containers) exit(IPEE_ERROR_CODE__CONTAINER__SERVICE_UNINITIALIZED);
+
     p_container container = (p_container)get_value_from_dictionary(containers, name);
+    if (!container) exit(IPEE_ERROR_CODE__CONTAINER__NOT_EXISTS);
+    
     return get_service_from_container(container, key);
 }
 
@@ -339,6 +363,9 @@ void *get_service_from_container_by_name(const char *name, char *key) {
  **********************************************************************************************/
 
 static void release_service(char *key, container_callback_function callback, p_application_container container) {
+    if (!containers) exit(IPEE_ERROR_CODE__CONTAINER__SERVICE_UNINITIALIZED);
+    if (!container) exit(IPEE_ERROR_CODE__CONTAINER__NOT_EXISTS);
+
     service_type_t type = (service_type_t)get_value_from_dictionary(container->elements_types, key);
     switch (type) {
     case SERVICE_TYPE_SINGLETON:
@@ -352,7 +379,7 @@ static void release_service(char *key, container_callback_function callback, p_a
         if (refs && callback) {
             iterate_over_dictionary_values(refs, (void *)callback);
         }
-        delete_dictionary(refs);
+        delete_dictionary(&refs);
         break;
 
     case SERVICE_TYPE_GLBLVALUE:

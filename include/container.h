@@ -2,8 +2,8 @@
  * @file container.h
  * @author chcp (cmewhou@yandex.ru)
  * @brief Common container for global access to application services.
- * @version 1.4
- * @date 2024-11-04
+ * @version 1.5
+ * @date 2024-11-18
  *
  * @copyright Copyright (c) 2024
  */
