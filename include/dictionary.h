@@ -344,8 +344,10 @@ extern void add_record_to_dictionary_by_index_with_metadata(const p_dictionary d
  *
  * @param dict Dictionary object.
  * @param key Record key.
+ * 
+ * @return Value of removed record.
  */
-extern void remove_record_from_dictionary(const p_dictionary dict, char *key);
+extern void *remove_record_from_dictionary(const p_dictionary dict, char *key);
 
 /**
  * @brief Remove record from dictionary by index.
@@ -355,8 +357,10 @@ extern void remove_record_from_dictionary(const p_dictionary dict, char *key);
  *
  * @param dict Dictionary object.
  * @param index Record index.
+ * 
+ * @return Value of removed record
  */
-extern void remove_record_from_dictionary_by_index(const p_dictionary dict, int index);
+extern void *remove_record_from_dictionary_by_index(const p_dictionary dict, int index);
 
 /**
  * @brief Update record in dictionary.
@@ -367,8 +371,10 @@ extern void remove_record_from_dictionary_by_index(const p_dictionary dict, int 
  * @param dict Dictionary object.
  * @param key Record key.
  * @param value Record value.
+ * 
+ * @return Value of updated record.
  */
-extern void update_record_in_dictionary(const p_dictionary dict, char *key, void *value);
+extern void *update_record_in_dictionary(const p_dictionary dict, char *key, void *value);
 
 /**
  * @brief Update record in dictionary by index.
@@ -379,8 +385,10 @@ extern void update_record_in_dictionary(const p_dictionary dict, char *key, void
  * @param dict Dictionary object.
  * @param index Record index.
  * @param value Record value.
+ * 
+ * @return Value of updated record.
  */
-extern void update_record_in_dictionary_by_index(const p_dictionary dict, int index, void *value);
+extern void *update_record_in_dictionary_by_index(const p_dictionary dict, int index, void *value);
 
 /**
  * @brief Check if dictionary contains specified key.

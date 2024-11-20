@@ -61,19 +61,6 @@ static void destroy_thread(const p_thread thread);
  */
 static void emit_on_complete(p_task task);
 
-/**
- * @brief Get event name.
- * 
- * @details
- * Get event name.
- * 
- * @param context Context name.
- * @param event Event name.
- * @param uniq_id Unique id.
- * @return Event name.
- */
-static char *get_event_name(const char *context, const char *event, const int uniq_id);
-
 
 /*********************************************************************************************
  * STATIC VARIABLES
@@ -223,7 +210,7 @@ void *await_task(p_task task) {
 p_task on_complete(p_task task, threadpool_complete_callback complete_callback, void *args) {
     if (!task) exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_TASK);
 
-    const char *event_name = get_event_name(threadpool_context_name, threadpool_complete_event_name, task->metadata->task_id);
+    const char *event_name = prepare_event_name(threadpool_context_name, threadpool_complete_event_name, task->metadata->task_id);
     subscribe_with_args(threadpool_context_name, event_name, complete_callback, args);
 
     return task;
@@ -331,27 +318,14 @@ static void default_task_release_callback(p_task task) {
     free(task);
 }
 
-static char *get_event_name(const char *context, const char *event, const int uniq_id) {
-    
-    const int id_size = uniq_id * 10 > 9 
-        ? uniq_id * 10 > 99 
-            ? uniq_id * 10 > 999
-                ? 4 : 3 : 2 : 1;
-
-    const char *event_name = malloc(strlen(context) + 1 + strlen(event) + 1 + id_size + 1);
-    sprintf(event_name, "%s_%s_%d", context, event, uniq_id);
-
-    return event_name;
-}
-
 static void emit_on_complete(p_task task) {
     if (!task) exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_TASK);
 
-    const char *event_name = get_event_name(threadpool_context_name, threadpool_complete_event_name, task->metadata->task_id);
+    const char *event_name = prepare_event_name(threadpool_context_name, threadpool_complete_event_name, task->metadata->task_id);
     p_dictionary subscribers = get_context_event_subscribers(threadpool_context_name, event_name);
     if (subscribers) {
         notify(threadpool_context_name, event_name, task->result);
         unsubscribe_from_event(threadpool_context_name, event_name);
-        free(event_name);
     }
+    free(event_name);
 }
