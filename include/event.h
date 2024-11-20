@@ -173,4 +173,18 @@ extern void global_notify(const char *event, void *args);
  */
 extern void notify(const char *context, const char *event, void *args);
 
+/**
+ * @brief Prepare event name.
+ * 
+ * @details
+ * Prepares event name.
+ * 
+ * @param context Context to prepare event name for.
+ * @param event Event to prepare event name for.
+ * @param uniq_id Unique id to prepare event name for.
+ * 
+ * @return Event name.
+ */
+char *prepare_event_name(const char *context, const char *event, const int uniq_id);
+
 #endif // IPEE_EVENT_H

@@ -113,9 +113,10 @@ void add_record_to_dictionary_by_index_with_metadata(const p_dictionary dict, in
 }
 
 
-void remove_record_from_dictionary(const p_dictionary dict, char *key) {
+void *remove_record_from_dictionary(const p_dictionary dict, char *key) {
     if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
-
+    
+    void *removed_value = NULL;
     p_record current = dict->head;
     p_record prev = NULL;
     while (current) {
@@ -129,24 +130,27 @@ void remove_record_from_dictionary(const p_dictionary dict, char *key) {
                 if (current->next)
                     current->next->prev = NULL;
             }
+            removed_value = current->value;
             free(current);
             dict->size--;
-            return;
+            return removed_value;
         }
         prev = current;
         current = current->next;
     }
+    return NULL;
 }
 
-void remove_record_from_dictionary_by_index(const p_dictionary dict, int index) {
+void *remove_record_from_dictionary_by_index(const p_dictionary dict, int index) {
     if (!dict) exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
     if (index < 0 && index >= dict->size) exit(IPEE_ERROR_CODE__DICTIONARY__INDEX_OUT_OF_RANGE);
-
+    
+    void *removed_value = NULL;
     p_record current = dict->head;
     p_record prev = NULL;
     for (int i = 0; i < index; i++) {
         if (!current)
-            return;
+            return NULL;
         prev = current;
         current = current->next;
     }
@@ -159,20 +163,30 @@ void remove_record_from_dictionary_by_index(const p_dictionary dict, int index) 
         if (current->next)
             current->next->prev = NULL;
     }
+    removed_value = current->value;
     free(current);
     dict->size--;
+    return removed_value;
 }
 
-void update_record_in_dictionary(const p_dictionary dict, char *key, void *value) {
+void *update_record_in_dictionary(const p_dictionary dict, char *key, void *value) {
+    void *old_value = NULL;
     p_record record = get_record_from_dictionary(dict, key);
-    if (record)
+    if (record) {
+        old_value = record->value;
         record->value = value;
+    }
+    return old_value;
 }
 
-void update_record_in_dictionary_by_index(const p_dictionary dict, int index, void *value) {    
+void *update_record_in_dictionary_by_index(const p_dictionary dict, int index, void *value) {
+    void *old_value = NULL;
     p_record record = get_record_from_dictionary_by_index(dict, index);
-    if (record)
+    if (record) {
+        old_value = record->value;
         record->value = value;
+    }
+    return old_value;
 }
 
 int contains_key_in_dictionary(const p_dictionary dict, char *key) {
