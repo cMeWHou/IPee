@@ -47,17 +47,15 @@ static void callback_invoker(p_record record, void *args);
 
 
 /**
- * @brief Get event name.
+ * @brief Get number length.
  * 
  * @details
- * Get event name.
+ * Get number length.
  * 
- * @param context Context name.
- * @param event Event name.
- * @param uniq_id Unique id.
- * @return Event name.
+ * @param number Number.
+ * @return Number length.
  */
-static char *get_event_name(const char *context, const char *event, const int uniq_id);
+static int get_number_length(int number);
 
 /*********************************************************************************************
  * STATIC VARIABLES
@@ -79,13 +77,13 @@ p_dictionary get_context_list(void) {
     return events;
 }
 
-extern p_dictionary get_context_events(const char *context_name) {
+p_dictionary get_context_events(const char *context_name) {
     if (!events) return NULL;
 
     return get_value_from_dictionary(events, context_name);
 }
 
-extern p_dictionary get_context_event_subscribers(const char *context_name, const char *event_name) {
+p_dictionary get_context_event_subscribers(const char *context_name, const char *event_name) {
     if (!events) return NULL;
     p_dictionary context = (p_dictionary)get_value_from_dictionary(events, context_name);
 
@@ -118,7 +116,7 @@ void subscribe_with_args(const char *context_name, const char *event_name,
     if (!event)
         event = init_event(context, event_name);
 
-    char *key = get_event_name(context_name, event_name, event->size);
+    char *key = prepare_event_name(context_name, event_name, event->size);
     add_record_to_dictionary_with_metadata(event, key, callback, args);
 }
 
@@ -192,6 +190,15 @@ void notify(const char *context_name, const char *event_name, void *args) {
     iterate_over_dictionary_records_with_args(event, callback_invoker, args);
 }
 
+char *prepare_event_name(const char *context, const char *event, const int id) {
+    const int id_length = get_number_length(id);
+
+    const char *event_name = malloc(strlen(context) + 1 + strlen(event) + 1 + id_length + 1);
+    sprintf(event_name, "%s_%s_%d", context, event, id);
+
+    return event_name;
+}
+
 /***********************************************************************************************
  * STATIC FUNCTIONS DEFINITIONS
  **********************************************************************************************/
@@ -227,14 +234,9 @@ static void callback_invoker(p_record record, void *args) {
     callback(args, captured_args);
 }
 
-static char *get_event_name(const char *context, const char *event, const int uniq_id) {
-    const int id_size = uniq_id * 10 > 9 
-        ? uniq_id * 10 > 99 
-            ? uniq_id * 10 > 999
-                ? 4 : 3 : 2 : 1;
-
-    const char *event_name = malloc(strlen(context) + 1 + strlen(event) + 1 + id_size + 1);
-    sprintf(event_name, "%s_%s_%d", context, event, uniq_id);
-
-    return event_name;
+static int get_number_length(int number) {
+    int length = 1;
+    while (number > 9)
+        number /= 10, length++;
+    return length;
 }
