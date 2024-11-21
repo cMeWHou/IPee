@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1.0)
+cmake_minimum_required(VERSION 3.5.0)
 
 set(PROJECT IpEe)
 project(${PROJECT})
@@ -25,6 +25,12 @@ add_library(${EVENT_LIB} ${EVENT_SRC})
 target_include_directories(${EVENT_LIB} PUBLIC ${INCLUDE_PATH})
 target_link_libraries(${EVENT_LIB} ${DICTIONARY_LIB})
 
+# Hashmap
+set(HASHMAP_SRC "${CMAKE_SOURCE_DIR}/src/hashmap.c")
+set(HASHMAP_LIB ${PROJECT}Hashmap)
+add_library(${HASHMAP_LIB} ${HASHMAP_SRC})
+target_include_directories(${HASHMAP_LIB} PUBLIC ${INCLUDE_PATH})
+
 # Threapool
 set(THREADPOOL_SRC "${CMAKE_SOURCE_DIR}/src/threadpool.c")
 set(THREADPOOL_LIB ${PROJECT}Threadpool)
@@ -33,7 +39,7 @@ target_include_directories(${THREADPOOL_LIB} PUBLIC ${INCLUDE_PATH})
 target_link_libraries(${THREADPOOL_LIB} ${DICTIONARY_LIB})
 
 # All
-set(PROJECT_SRC ${DICTIONARY_SRC} ${CONTAINER_SRC} ${EVENT_SRC} ${THREADPOOL_SRC})
+set(PROJECT_SRC ${DICTIONARY_SRC} ${CONTAINER_SRC} ${EVENT_SRC} ${HASHMAP_SRC} ${THREADPOOL_SRC})
 set(PROJECT_LIB ${PROJECT})
 add_library(${PROJECT_LIB} ${PROJECT_SRC})
 target_include_directories(${PROJECT_LIB} PUBLIC ${INCLUDE_PATH})
