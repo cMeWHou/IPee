@@ -4,6 +4,7 @@ set(AVAILABLE_TESTS
   "bitmap_test.c"
   "container_test.c"
   "event_test.c"
+  "hashmap_test.c"
   "threadpool_test.c"
 )
 create_test_sourcelist(TESTS_SOURCES IpeeTests.c ${AVAILABLE_TESTS})
