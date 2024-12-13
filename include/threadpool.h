@@ -102,6 +102,20 @@ typedef void (threadpool_release_callback)(p_task task);
 extern void set_threadpool_size(int size);
 
 /**
+ * @brief Set internal task counter limit.
+ * 
+ * @param limit Internal task counter limit.
+ */
+extern void set_internal_task_counter_limit(int limit);
+
+/**
+ * @brief Set task waiting timeout.
+ * 
+ * @param timeout Task waiting timeout.
+ */
+extern void set_task_waiting_timeout(int timeout);
+
+/**
  * @brief Initialize thread pool.
  */
 extern void init_thread_pool(void);
