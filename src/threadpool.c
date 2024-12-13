@@ -108,7 +108,18 @@ static int internal_task_counter = 1;
  ********************************************************************************************/
 
 void set_threadpool_size(int size) {
+    if (thread_pool) exit(-1);
     THREAD_POOL_SIZE = size;
+}
+
+void set_internal_task_counter_limit(int limit) {
+    if (thread_pool) exit(IPEE_ERROR_CODE__THREADPOOL__SERVICE_ALREADY_INITIALIZED);
+    INTERNAL_TASK_COUNTER_LIMIT = limit;
+}
+
+void set_task_waiting_timeout(int timeout) {
+    if (thread_pool) exit(IPEE_ERROR_CODE__THREADPOOL__SERVICE_ALREADY_INITIALIZED);
+    TASK_WAITING_TIMEOUT = timeout;
 }
 
 void init_thread_pool(void) {
