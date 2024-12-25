@@ -6,6 +6,4 @@
  * FUNCTIONS DEFINITIONS
  ********************************************************************************************/
 
-int is_equal(const char *a, const char *b) { 
-    return strcmp(a, b) == 0; 
-}
+int is_equal(const char *a, const char *b) { return strcmp(a, b) == 0; }

@@ -15,7 +15,7 @@
 
 /**
  * @brief Compare two strings.
- * 
+ *
  * @param a First string.
  * @param b Second string.
  * @return 1 if equal, 0 else.
