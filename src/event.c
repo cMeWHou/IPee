@@ -72,7 +72,9 @@ static p_dictionary events = NULL;
  * FUNCTIONS DEFINITIONS
  ********************************************************************************************/
 
-p_dictionary get_context_list(void) { return events; }
+p_dictionary get_context_list(void) { 
+    return events;
+}
 
 p_dictionary get_context_events(const char *context_name) {
     if (!events)
@@ -113,13 +115,11 @@ void subscribe_with_args(const char *context_name, const char *event_name,
     if (!events)
         events = create_dictionary();
 
-    p_dictionary context =
-        (p_dictionary)get_value_from_dictionary(events, context_name);
+    p_dictionary context = (p_dictionary)get_value_from_dictionary(events, context_name);
     if (!context)
         context = init_event_context(context_name);
 
-    p_dictionary event =
-        (p_dictionary)get_value_from_dictionary(context, event_name);
+    p_dictionary event = (p_dictionary)get_value_from_dictionary(context, event_name);
     if (!event)
         event = init_event(context, event_name);
 
@@ -136,18 +136,15 @@ void unsubscribe(const char *context_name, const char *event_name,
     if (!events)
         exit(IPEE_ERROR_CODE__EVENT__SERVICE_UNINITIALIZED);
 
-    p_dictionary context =
-        (p_dictionary)get_value_from_dictionary(events, context_name);
+    p_dictionary context = (p_dictionary)get_value_from_dictionary(events, context_name);
     if (!context)
         exit(IPEE_ERROR_CODE__EVENT__CONTEXT_NOT_EXISTS);
 
-    p_dictionary event =
-        (p_dictionary)get_value_from_dictionary(context, event_name);
+    p_dictionary event = (p_dictionary)get_value_from_dictionary(context, event_name);
     if (!event)
         exit(IPEE_ERROR_CODE__EVENT__NOT_EXISTS);
 
-    p_record record =
-        (p_record)get_record_from_dictionary_by_value(event, callback);
+    p_record record = (p_record)get_record_from_dictionary_by_value(event, callback);
     if (!record)
         exit(IPEE_ERROR_CODE__EVENT__INVALID_CALLBACK);
 
@@ -198,13 +195,11 @@ void notify(const char *context_name, const char *event_name, void *args) {
     if (!events)
         exit(IPEE_ERROR_CODE__EVENT__SERVICE_UNINITIALIZED);
 
-    p_dictionary context =
-        (p_dictionary)get_value_from_dictionary(events, context_name);
+    p_dictionary context = (p_dictionary)get_value_from_dictionary(events, context_name);
     if (!context)
         exit(IPEE_ERROR_CODE__EVENT__CONTEXT_NOT_EXISTS);
 
-    p_dictionary event =
-        (p_dictionary)get_value_from_dictionary(context, event_name);
+    p_dictionary event = (p_dictionary)get_value_from_dictionary(context, event_name);
     if (!event)
         exit(IPEE_ERROR_CODE__EVENT__NOT_EXISTS);
 
@@ -214,8 +209,7 @@ void notify(const char *context_name, const char *event_name, void *args) {
 char *prepare_event_name(const char *context, const char *event, const int id) {
     const int id_length = get_number_length(id);
 
-    const char *event_name =
-        malloc(strlen(context) + 1 + strlen(event) + 1 + id_length + 1);
+    const char *event_name = malloc(strlen(context) + 1 + strlen(event) + 1 + id_length + 1);
     sprintf(event_name, "%s_%s_%d", context, event, id);
 
     return event_name;

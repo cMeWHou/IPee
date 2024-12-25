@@ -185,8 +185,7 @@ p_task run_task_with_args(p_task task, void *args) {
     if (!task)
         exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_TASK);
 
-    p_dictionary available_threads =
-        filter_dictionary(thread_pool, filter_threads);
+    p_dictionary available_threads = filter_dictionary(thread_pool, filter_threads);
     if (available_threads->size) {
         task->metadata->args = args;
         p_thread thread = get_head_value_from_dictionary(available_threads);
@@ -359,8 +358,7 @@ static void emit_on_complete(p_task task) {
     const char *event_name = prepare_event_name(threadpool_context_name,
                                                 threadpool_complete_event_name,
                                                 task->metadata->task_id);
-    p_dictionary subscribers =
-        get_context_event_subscribers(threadpool_context_name, event_name);
+    p_dictionary subscribers = get_context_event_subscribers(threadpool_context_name, event_name);
     if (subscribers) {
         notify(threadpool_context_name, event_name, task->result);
         unsubscribe_from_event(threadpool_context_name, event_name);
