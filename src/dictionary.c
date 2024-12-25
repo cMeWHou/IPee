@@ -83,14 +83,12 @@ void emplace_record_to_dictionary(const p_dictionary dict, char *key,
 void emplace_record_to_dictionary_with_metadata(const p_dictionary dict,
                                                 char *key, void *value,
                                                 void *metadata) {
-    add_record_to_dictionary_by_index_with_metadata(dict, 0, key, value,
-                                                    metadata);
+    add_record_to_dictionary_by_index_with_metadata(dict, 0, key, value, metadata);
 }
 
 void add_record_to_dictionary_by_index(const p_dictionary dict, int index,
                                        char *key, void *value) {
-    add_record_to_dictionary_by_index_with_metadata(dict, index, key, value,
-                                                    NULL);
+    add_record_to_dictionary_by_index_with_metadata(dict, index, key, value, NULL);
 }
 
 void add_record_to_dictionary_by_index_with_metadata(const p_dictionary dict,
@@ -520,8 +518,7 @@ p_dictionary map_dictionary(const p_dictionary dict,
     return new_dict;
 }
 
-p_dictionary
-map_dictionary_with_args(const p_dictionary dict,
+p_dictionary map_dictionary_with_args(const p_dictionary dict,
                          dictionary_iteration_callback_map_with_args callback,
                          void *args) {
     if (!dict)
@@ -638,8 +635,7 @@ p_dictionary sort_dictionary(const p_dictionary dict,
     return new_dict;
 }
 
-p_dictionary
-sort_dictionary_with_args(const p_dictionary dict,
+p_dictionary sort_dictionary_with_args(const p_dictionary dict,
                           dictionary_iteration_callback_sort_with_args callback,
                           void *args) {
     if (!dict)

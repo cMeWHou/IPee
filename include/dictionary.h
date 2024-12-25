@@ -598,8 +598,7 @@ extern p_record get_record_from_dictionary_by_value(const p_dictionary dict,
  * @param value Record value.
  * @return Dictionary of records.
  */
-extern p_dictionary
-get_records_from_dictionary_by_value(const p_dictionary dict, void *value);
+extern p_dictionary get_records_from_dictionary_by_value(const p_dictionary dict, void *value);
 
 /**
  * @brief Get head record from dictionary.
@@ -704,8 +703,7 @@ extern void iterate_over_dictionary_with_args(
  * @param dict Dictionary.
  * @param callback Callback function.
  */
-extern void
-iterate_over_dictionary_keys(const p_dictionary dict,
+extern void iterate_over_dictionary_keys(const p_dictionary dict,
                              dictionary_iteration_keys_callback callback);
 
 /**
@@ -733,8 +731,7 @@ extern void iterate_over_dictionary_keys_with_args(
  * @param dict Dictionary.
  * @param callback Callback function.
  */
-extern void
-iterate_over_dictionary_values(const p_dictionary dict,
+extern void iterate_over_dictionary_values(const p_dictionary dict,
                                dictionary_iteration_values_callback callback);
 
 /**
@@ -762,8 +759,7 @@ extern void iterate_over_dictionary_values_with_args(
  * @param dict Dictionary.
  * @param callback Callback function.
  */
-extern void
-iterate_over_dictionary_records(const p_dictionary dict,
+extern void iterate_over_dictionary_records(const p_dictionary dict,
                                 dictionary_iteration_records_callback callback);
 
 /**
@@ -807,8 +803,7 @@ extern p_dictionary map_dictionary(const p_dictionary dict,
  * @param args Arguments for callback function.
  * @return Mapped dictionary.
  */
-extern p_dictionary
-map_dictionary_with_args(const p_dictionary dict,
+extern p_dictionary map_dictionary_with_args(const p_dictionary dict,
                          dictionary_iteration_callback_map_with_args callback,
                          void *args);
 
@@ -823,8 +818,7 @@ map_dictionary_with_args(const p_dictionary dict,
  * @param callback Callback function.
  * @return Filtered dictionary.
  */
-extern p_dictionary
-filter_dictionary(const p_dictionary dict,
+extern p_dictionary filter_dictionary(const p_dictionary dict,
                   dictionary_iteration_callback_filter callback);
 
 /**
@@ -887,8 +881,7 @@ extern void *reduce_dictionary_with_args(
  * @param dict Dictionary.
  * @param callback Callback function.
  */
-extern p_dictionary
-sort_dictionary(const p_dictionary dict,
+extern p_dictionary sort_dictionary(const p_dictionary dict,
                 dictionary_iteration_callback_sort callback);
 
 /**
@@ -902,8 +895,7 @@ sort_dictionary(const p_dictionary dict,
  * @param callback Callback function.
  * @param args Arguments for callback function.
  */
-extern p_dictionary
-sort_dictionary_with_args(const p_dictionary dict,
+extern p_dictionary sort_dictionary_with_args(const p_dictionary dict,
                           dictionary_iteration_callback_sort_with_args callback,
                           void *args);
 
