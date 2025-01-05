@@ -46,6 +46,7 @@ typedef struct task_metadata_s {
  */
 typedef struct task_s {
     volatile int is_done;     // Task is done.
+    volatile int is_running;  // Task is running.
     void *result;             // Task result.
     p_task_metadata metadata; // Task metainformation.
 } task_t, *p_task;
