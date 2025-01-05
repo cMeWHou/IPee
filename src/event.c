@@ -83,8 +83,7 @@ p_dictionary get_context_events(const char *context_name) {
     return get_value_from_dictionary(events, context_name);
 }
 
-p_dictionary get_context_event_subscribers(const char *context_name,
-                                           const char *event_name) {
+p_dictionary get_context_event_subscribers(const char *context_name, const char *event_name) {
     if (!events)
         return NULL;
     p_dictionary context =
@@ -99,19 +98,17 @@ void global_subscribe(const char *event_name, observable_callback callback) {
     global_subscribe_with_args(event_name, callback, NULL);
 }
 
-void global_subscribe_with_args(const char *event_name,
-                                observable_callback_with_args callback,
-                                void *args) {
+void global_subscribe_with_args(
+    const char *event_name, observable_callback_with_args callback, void *args) {
     subscribe_with_args(name_of(global), event_name, callback, args);
 }
 
-void subscribe(const char *context, const char *event_name,
-               observable_callback callback) {
+void subscribe(const char *context, const char *event_name, observable_callback callback) {
     subscribe_with_args(context, event_name, callback, NULL);
 }
 
-void subscribe_with_args(const char *context_name, const char *event_name,
-                         observable_callback_with_args callback, void *args) {
+void subscribe_with_args(
+    const char *context_name, const char *event_name, observable_callback_with_args callback, void *args) {
     if (!events)
         events = create_dictionary();
 
@@ -131,8 +128,7 @@ void global_unsubscribe(const char *event_name, observable_callback callback) {
     unsubscribe(name_of(global), event_name, callback);
 }
 
-void unsubscribe(const char *context_name, const char *event_name,
-                 observable_callback callback) {
+void unsubscribe(const char *context_name, const char *event_name, observable_callback callback) {
     if (!events)
         exit(IPEE_ERROR_CODE__EVENT__SERVICE_UNINITIALIZED);
 
@@ -167,8 +163,7 @@ void unsubscribe(const char *context_name, const char *event_name,
 }
 
 void unsubscribe_from_event(const char *context, const char *event_name) {
-    p_dictionary subscribers =
-        get_context_event_subscribers(context, event_name);
+    p_dictionary subscribers = get_context_event_subscribers(context, event_name);
     p_record current = subscribers ? subscribers->head : NULL;
     while (current) {
         p_record next = current->next;

@@ -34,8 +34,8 @@ typedef struct application_container_s {
  * @param key Service key identifier.
  * @param callback Release callback function.
  */
-static void release_service(char *key, container_callback_function callback,
-                            p_application_container container);
+static void release_service(
+    char *key, container_callback_function callback, p_application_container container);
 
 /*********************************************************************************************
  * STATIC VARIABLES
@@ -168,14 +168,13 @@ void add_glblvalue_to_global_container(
     add_service_to_global_container(SERVICE_TYPE_GLBLVALUE, key, NULL, release_callback, value);
 }
 
-void add_glblvalue_to_container(p_container container, char *key, void *value,
-                                container_callback_function release_callback) {
+void add_glblvalue_to_container(
+    p_container container, char *key, void *value, container_callback_function release_callback) {
     add_service_to_container(container, SERVICE_TYPE_GLBLVALUE, key, NULL, release_callback, value);
 }
 
 void add_glblvalue_to_container_by_name(
-    const char *name, char *key, void *value,
-    container_callback_function release_callback) {
+    const char *name, char *key, void *value, container_callback_function release_callback) {
     if (!containers)
         exit(IPEE_ERROR_CODE__CONTAINER__SERVICE_UNINITIALIZED);
 
@@ -187,19 +186,20 @@ void add_glblvalue_to_container_by_name(
 }
 
 void add_singleton_to_global_container(
-    char *key, container_callback_function initial_callback,
-    container_callback_function release_callback) {
+    char *key, container_callback_function initial_callback, container_callback_function release_callback) {
     add_service_to_global_container(SERVICE_TYPE_SINGLETON, key, initial_callback, release_callback, NULL);
 }
 
-void add_singleton_to_container(p_container container, char *key,
-                                container_callback_function initial_callback,
-                                container_callback_function release_callback) {
+void add_singleton_to_container(
+    p_container container, char *key,
+    container_callback_function initial_callback, 
+    container_callback_function release_callback) {
     add_service_to_container(container, SERVICE_TYPE_SINGLETON, key, initial_callback, release_callback, NULL);
 }
 
 void add_singleton_to_container_by_name(
-    const char *name, char *key, container_callback_function initial_callback,
+    const char *name, char *key,
+    container_callback_function initial_callback,
     container_callback_function release_callback) {
     if (!containers)
         exit(IPEE_ERROR_CODE__CONTAINER__SERVICE_UNINITIALIZED);
@@ -225,7 +225,8 @@ void add_transient_to_container(p_container container, char *key,
 }
 
 void add_transient_to_container_by_name(
-    const char *name, char *key, container_callback_function initial_callback,
+    const char *name, char *key,
+    container_callback_function initial_callback,
     container_callback_function release_callback) {
     if (!containers)
         exit(IPEE_ERROR_CODE__CONTAINER__SERVICE_UNINITIALIZED);
@@ -252,11 +253,10 @@ void add_service_to_global_container(
     add_service_to_container(container, type, key, initial_callback, release_callback, args);
 }
 
-void add_service_to_container(p_container container, const service_type_t type,
-                              char *key,
-                              container_callback_function initial_callback,
-                              container_callback_function release_callback,
-                              void *args) {
+void add_service_to_container(
+    p_container container, const service_type_t type, char *key,
+    container_callback_function initial_callback,
+    container_callback_function release_callback, void *args) {
     if (!containers)
         exit(IPEE_ERROR_CODE__CONTAINER__SERVICE_UNINITIALIZED);
     if (!container)
@@ -339,8 +339,8 @@ void *get_service_from_container(p_container container, char *key) {
     return get_service_from_container_with_args(container, key, NULL);
 }
 
-void *get_service_from_container_with_args(p_container container, char *key,
-                                           void *tmp_args) {
+void *get_service_from_container_with_args(
+    p_container container, char *key, void *tmp_args) {
     if (!containers)
         exit(IPEE_ERROR_CODE__CONTAINER__SERVICE_UNINITIALIZED);
     if (!container)
@@ -414,8 +414,8 @@ void *get_service_from_container_by_name(const char *name, char *key) {
  * STATIC FUNCTIONS DEFINITIONS
  **********************************************************************************************/
 
-static void release_service(char *key, container_callback_function callback,
-                            p_application_container container) {
+static void release_service(
+    char *key, container_callback_function callback, p_application_container container) {
     if (!containers)
         exit(IPEE_ERROR_CODE__CONTAINER__SERVICE_UNINITIALIZED);
     if (!container)
