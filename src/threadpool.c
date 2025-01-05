@@ -153,6 +153,7 @@ p_task make_task(threadpool_task_callback callback, void *args) {
         return NULL;
 
     task->is_done = 0;
+    task->is_running = 0;
     task->result = NULL;
     task->metadata = NULL;
 
@@ -232,8 +233,7 @@ p_task on_complete(p_task task, threadpool_complete_callback complete_callback, 
     const char *event_name = prepare_event_name(threadpool_context_name,
                                                 threadpool_complete_event_name,
                                                 task->metadata->task_id);
-    subscribe_with_args(threadpool_context_name, event_name, complete_callback,
-                        args);
+    subscribe_with_args(threadpool_context_name, event_name, complete_callback, args);
 
     return task;
 }
@@ -285,23 +285,22 @@ static void *task_invoker(p_thread thread) {
 
     while (thread->is_running) {
         p_task task = thread->task;
-        if (task) {
-            p_task_metadata metadata = task->metadata;
-            if (!metadata)
-                continue;
+        if (!task || task->is_running) continue;
+        task->is_running = 1;
 
-            void *result = metadata->callback(metadata->args);
+        p_task_metadata metadata = task->metadata;
+        if (!metadata) continue;
 
-            task->is_done = 1;
-            task->result = result;
-            if (task->metadata->release_type == TASK_RELEASE_TYPE_IMMEDIATE) {
-                emit_on_complete(task);
-                if (task->metadata->release_callback)
-                    task->metadata->release_callback(task);
-            }
-            thread->task = NULL;
-            thread->is_buzy = 0;
+        void *result = metadata->callback(metadata->args);
+        task->is_done = 1;
+        task->result = result;
+        if (task->metadata->release_type == TASK_RELEASE_TYPE_IMMEDIATE) {
+            emit_on_complete(task);
+            if (task->metadata->release_callback)
+                task->metadata->release_callback(task);
         }
+        thread->task = NULL;
+        thread->is_buzy = 0;
     }
 
     pthread_exit(NULL);
