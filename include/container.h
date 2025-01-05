@@ -36,8 +36,8 @@ typedef enum service_type_e {
  * @brief Container.
  */
 typedef struct container_s {
-    const char *name;
-    const p_dictionary services;
+    const char *name;            // Container name.
+    const p_dictionary services; // Container services list.
 } container_t, *p_container;
 
 /***********************************************************************************************
@@ -137,8 +137,9 @@ extern void release_all_containers(void);
  * Add new global value to application container.
  * If global value with specified key exists it will be replaced.
  */
-extern void add_glblvalue_to_global_container(char *key, void *value,
-                                  container_callback_function release_callback);
+extern void add_glblvalue_to_global_container(
+    char *key, void *value,
+    container_callback_function release_callback);
 
 /**
  * @brief Add new global value to container.
@@ -152,8 +153,9 @@ extern void add_glblvalue_to_global_container(char *key, void *value,
  * Add new global value to application container.
  * If global value with specified key exists it will be replaced.
  */
-extern void add_glblvalue_to_container(p_container container, char *key, void *value,
-                           container_callback_function release_callback);
+extern void add_glblvalue_to_container(
+    p_container container, char *key, void *value,
+    container_callback_function release_callback);
 
 /**
  * @brief Add new global value to container by name.
@@ -183,8 +185,8 @@ extern void add_glblvalue_to_container_by_name(
  * @param release_callback Release callback function.
  */
 extern void add_singleton_to_global_container(char *key,
-                                  container_callback_function initial_callback,
-                                  container_callback_function release_callback);
+    container_callback_function initial_callback,
+    container_callback_function release_callback);
 
 /**
  * @brief Add new singleton to container.
@@ -198,9 +200,10 @@ extern void add_singleton_to_global_container(char *key,
  * @param initial_callback Initial callback function.
  * @param release_callback Release callback function.
  */
-extern void add_singleton_to_container(p_container container, char *key,
-                           container_callback_function initial_callback,
-                           container_callback_function release_callback);
+extern void add_singleton_to_container(
+    p_container container, char *key,
+    container_callback_function initial_callback,
+    container_callback_function release_callback);
 
 /**
  * @brief Add new singleton to container by name.
@@ -215,7 +218,8 @@ extern void add_singleton_to_container(p_container container, char *key,
  * @param release_callback Release callback function.
  */
 extern void add_singleton_to_container_by_name(
-    const char *name, char *key, container_callback_function initial_callback,
+    const char *name, char *key,
+    container_callback_function initial_callback,
     container_callback_function release_callback);
 
 /**
@@ -230,8 +234,8 @@ extern void add_singleton_to_container_by_name(
  * @param release_callback Release callback function.
  */
 extern void add_transient_to_global_container(char *key,
-                                  container_callback_function initial_callback,
-                                  container_callback_function release_callback);
+    container_callback_function initial_callback,
+    container_callback_function release_callback);
 
 /**
  * @brief Add new transient to container.
@@ -246,8 +250,8 @@ extern void add_transient_to_global_container(char *key,
  * @param release_callback Release callback function.
  */
 extern void add_transient_to_container(p_container container, char *key,
-                           container_callback_function initial_callback,
-                           container_callback_function release_callback);
+    container_callback_function initial_callback,
+    container_callback_function release_callback);
 
 /**
  * @brief Add new transient to container by name.
@@ -278,10 +282,11 @@ extern void add_transient_to_container_by_name(
  * @param release_callback Release callback function.
  * @param args Arguments.
  */
-extern void add_service_to_global_container(const service_type_t type, char *key,
-                                container_callback_function initial_callback,
-                                container_callback_function release_callback,
-                                void *args);
+extern void add_service_to_global_container(
+    const service_type_t type, char *key,
+    container_callback_function initial_callback,
+    container_callback_function release_callback,
+    void *args);
 
 /**
  * @brief Add new service to container.
@@ -355,8 +360,8 @@ extern void *get_service_from_container(p_container container, char *key);
  * @param tmp_args Arguments.
  * @return Service instance.
  */
-extern void *get_service_from_container_with_args(p_container container,
-                                                  char *key, void *tmp_args);
+extern void *get_service_from_container_with_args(
+    p_container container, char *key, void *tmp_args);
 
 /**
  * @brief Get service instance from container by name.

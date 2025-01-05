@@ -58,8 +58,7 @@ extern p_dictionary get_context_events(const char *context);
  * @param event Event name.
  * @return Context event subscribers.
  */
-extern p_dictionary get_context_event_subscribers(const char *context,
-                                                  const char *event);
+extern p_dictionary get_context_event_subscribers(const char *context, const char *event);
 
 /**
  * @brief Subscribe to event globally.
@@ -82,8 +81,7 @@ extern void global_subscribe(const char *event, observable_callback callback);
  * @param event Event to subscribe to.
  * @param callback Callback function.
  */
-extern void subscribe(const char *context, const char *event,
-                      observable_callback callback);
+extern void subscribe(const char *context, const char *event, observable_callback callback);
 
 /**
  * @brief Subscribe to event globally.
@@ -95,9 +93,8 @@ extern void subscribe(const char *context, const char *event,
  * @param callback Callback function.
  * @param args Captured arguments for callback function.
  */
-extern void global_subscribe_with_args(const char *event,
-                                       observable_callback_with_args callback,
-                                       void *args);
+extern void global_subscribe_with_args(
+    const char *event, observable_callback_with_args callback, void *args);
 
 /**
  * @brief Subscribe to event.
@@ -110,9 +107,9 @@ extern void global_subscribe_with_args(const char *event,
  * @param callback Callback function.
  * @param args Captured arguments for callback function.
  */
-extern void subscribe_with_args(const char *context, const char *event,
-                                observable_callback_with_args callback,
-                                void *args);
+extern void subscribe_with_args(
+    const char *context, const char *event,
+    observable_callback_with_args callback, void *args);
 
 /**
  * @brief Unsubscribe from event globally.
@@ -133,8 +130,7 @@ extern void global_unsubscribe(const char *event, observable_callback callback);
  * @param context Context to unsubscribe from.
  * @param event Event to unsubscribe from.
  */
-extern void unsubscribe(const char *context, const char *event,
-                        observable_callback callback);
+extern void unsubscribe(const char *context, const char *event, observable_callback callback);
 
 /**
  * @brief Unsubscribe from event.
@@ -190,7 +186,6 @@ extern void notify(const char *context, const char *event, void *args);
  *
  * @return Event name.
  */
-char *prepare_event_name(const char *context, const char *event,
-                         const int uniq_id);
+char *prepare_event_name(const char *context, const char *event, const int uniq_id);
 
 #endif // IPEE_EVENT_H

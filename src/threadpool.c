@@ -225,8 +225,7 @@ void *await_task(p_task task) {
     return result;
 }
 
-p_task on_complete(p_task task, threadpool_complete_callback complete_callback,
-                   void *args) {
+p_task on_complete(p_task task, threadpool_complete_callback complete_callback, void *args) {
     if (!task)
         exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_TASK);
 
@@ -320,8 +319,7 @@ static void set_task_to_thread(p_thread thread, p_task task) {
     task->metadata->thread = thread;
 }
 
-static int filter_threads(const p_record record, int _1,
-                          const p_dictionary _2) {
+static int filter_threads(const p_record record, int _1, const p_dictionary _2) {
     const p_thread thread = (p_thread)record->value;
     if (!record || !record->value)
         exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_THREAD);

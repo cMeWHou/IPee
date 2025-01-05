@@ -53,8 +53,8 @@ void add_record_to_dictionary(const p_dictionary dict, char *key, void *value) {
     add_record_to_dictionary_with_metadata(dict, key, value, NULL);
 }
 
-void add_record_to_dictionary_with_metadata(const p_dictionary dict, char *key,
-                                            void *value, void *metadata) {
+void add_record_to_dictionary_with_metadata(
+    const p_dictionary dict, char *key, void *value, void *metadata) {
     if (!dict)
         exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
 
@@ -75,26 +75,22 @@ void add_record_to_dictionary_with_metadata(const p_dictionary dict, char *key,
     dict->size++;
 }
 
-void emplace_record_to_dictionary(const p_dictionary dict, char *key,
-                                  void *value) {
+void emplace_record_to_dictionary(const p_dictionary dict, char *key, void *value) {
     add_record_to_dictionary_by_index(dict, 0, key, value);
 }
 
-void emplace_record_to_dictionary_with_metadata(const p_dictionary dict,
-                                                char *key, void *value,
-                                                void *metadata) {
+void emplace_record_to_dictionary_with_metadata(
+    const p_dictionary dict, char *key, void *value, void *metadata) {
     add_record_to_dictionary_by_index_with_metadata(dict, 0, key, value, metadata);
 }
 
-void add_record_to_dictionary_by_index(const p_dictionary dict, int index,
-                                       char *key, void *value) {
+void add_record_to_dictionary_by_index(
+    const p_dictionary dict, int index, char *key, void *value) {
     add_record_to_dictionary_by_index_with_metadata(dict, index, key, value, NULL);
 }
 
-void add_record_to_dictionary_by_index_with_metadata(const p_dictionary dict,
-                                                     int index, char *key,
-                                                     void *value,
-                                                     void *metadata) {
+void add_record_to_dictionary_by_index_with_metadata(
+    const p_dictionary dict, int index, char *key, void *value, void *metadata) {
     if (!dict)
         exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
 
@@ -154,8 +150,7 @@ void *remove_record_from_dictionary(const p_dictionary dict, char *key) {
     return NULL;
 }
 
-void *remove_record_from_dictionary_by_index(const p_dictionary dict,
-                                             int index) {
+void *remove_record_from_dictionary_by_index(const p_dictionary dict, int index) {
     if (!dict)
         exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
     if (index < 0 && index >= dict->size)
@@ -185,8 +180,7 @@ void *remove_record_from_dictionary_by_index(const p_dictionary dict,
     return removed_value;
 }
 
-void *update_record_in_dictionary(const p_dictionary dict, char *key,
-                                  void *value) {
+void *update_record_in_dictionary(const p_dictionary dict, char *key, void *value) {
     void *old_value = NULL;
     p_record record = get_record_from_dictionary(dict, key);
     if (record) {
@@ -196,8 +190,7 @@ void *update_record_in_dictionary(const p_dictionary dict, char *key,
     return old_value;
 }
 
-void *update_record_in_dictionary_by_index(const p_dictionary dict, int index,
-                                           void *value) {
+void *update_record_in_dictionary_by_index(const p_dictionary dict, int index, void *value) {
     void *old_value = NULL;
     p_record record = get_record_from_dictionary_by_index(dict, index);
     if (record) {
@@ -303,8 +296,7 @@ p_dictionary get_records_from_dictionary(const p_dictionary dict, char *key) {
     return records_dict;
 }
 
-p_record get_record_from_dictionary_by_value(const p_dictionary dict,
-                                             void *value) {
+p_record get_record_from_dictionary_by_value(const p_dictionary dict, void *value) {
     if (!dict)
         exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
 
@@ -317,8 +309,7 @@ p_record get_record_from_dictionary_by_value(const p_dictionary dict,
     return NULL;
 }
 
-p_dictionary get_records_from_dictionary_by_value(const p_dictionary dict,
-                                                  void *value) {
+p_dictionary get_records_from_dictionary_by_value(const p_dictionary dict, void *value) {
     if (!dict)
         exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
 
@@ -346,8 +337,7 @@ p_record get_tail_record_from_dictionary(const p_dictionary dict) {
     return dict->tail;
 }
 
-p_record get_record_from_dictionary_by_index(const p_dictionary dict,
-                                             int index) {
+p_record get_record_from_dictionary_by_index(const p_dictionary dict, int index) {
     if (!dict)
         exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
     if (index < 0 && index >= dict->size)
@@ -377,8 +367,7 @@ int get_index_from_dictionary_by_key(const p_dictionary dict, char *key) {
     return -1;
 }
 
-int get_index_from_dictionary_by_ref_record(const p_dictionary dict,
-                                            p_record record) {
+int get_index_from_dictionary_by_ref_record(const p_dictionary dict, p_record record) {
     if (!dict)
         exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
 
@@ -393,8 +382,7 @@ int get_index_from_dictionary_by_ref_record(const p_dictionary dict,
     return -1;
 }
 
-void iterate_over_dictionary(const p_dictionary dict,
-                             dictionary_iteration_callback callback) {
+void iterate_over_dictionary(const p_dictionary dict, dictionary_iteration_callback callback) {
     if (!dict)
         exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
 
@@ -420,8 +408,8 @@ void iterate_over_dictionary_with_args(
     }
 }
 
-void iterate_over_dictionary_keys(const p_dictionary dict,
-                                  dictionary_iteration_keys_callback callback) {
+void iterate_over_dictionary_keys(
+    const p_dictionary dict, dictionary_iteration_keys_callback callback) {
     if (!dict)
         exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
 
@@ -434,8 +422,7 @@ void iterate_over_dictionary_keys(const p_dictionary dict,
 }
 
 void iterate_over_dictionary_keys_with_args(
-    const p_dictionary dict,
-    dictionary_iteration_keys_callback_with_args callback, void *args) {
+    const p_dictionary dict, dictionary_iteration_keys_callback_with_args callback, void *args) {
     if (!dict)
         exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
 
@@ -461,8 +448,7 @@ void iterate_over_dictionary_values(
 }
 
 void iterate_over_dictionary_values_with_args(
-    const p_dictionary dict,
-    dictionary_iteration_values_callback_with_args callback, void *args) {
+    const p_dictionary dict, dictionary_iteration_values_callback_with_args callback, void *args) {
     if (!dict)
         exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
 
@@ -488,8 +474,7 @@ void iterate_over_dictionary_records(
 }
 
 void iterate_over_dictionary_records_with_args(
-    const p_dictionary dict,
-    dictionary_iteration_records_callback_with_args callback, void *args) {
+    const p_dictionary dict, dictionary_iteration_records_callback_with_args callback, void *args) {
     if (!dict)
         exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
 
@@ -501,8 +486,8 @@ void iterate_over_dictionary_records_with_args(
     }
 }
 
-p_dictionary map_dictionary(const p_dictionary dict,
-                            dictionary_iteration_callback_map callback) {
+p_dictionary map_dictionary(
+    const p_dictionary dict, dictionary_iteration_callback_map callback) {
     if (!dict)
         exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
 
@@ -518,9 +503,9 @@ p_dictionary map_dictionary(const p_dictionary dict,
     return new_dict;
 }
 
-p_dictionary map_dictionary_with_args(const p_dictionary dict,
-                         dictionary_iteration_callback_map_with_args callback,
-                         void *args) {
+p_dictionary map_dictionary_with_args(
+    const p_dictionary dict, 
+    dictionary_iteration_callback_map_with_args callback, void *args) {
     if (!dict)
         exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
 
@@ -536,8 +521,8 @@ p_dictionary map_dictionary_with_args(const p_dictionary dict,
     return new_dict;
 }
 
-p_dictionary filter_dictionary(const p_dictionary dict,
-                               dictionary_iteration_callback_filter callback) {
+p_dictionary filter_dictionary(
+    const p_dictionary dict, dictionary_iteration_callback_filter callback) {
     if (!dict)
         exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
 
@@ -571,9 +556,9 @@ p_dictionary filter_dictionary_with_args(
     return new_dict;
 }
 
-void *reduce_dictionary(const p_dictionary dict,
-                        dictionary_iteration_callback_reduce callback,
-                        void *acc) {
+void *reduce_dictionary(
+    const p_dictionary dict,
+    dictionary_iteration_callback_reduce callback, void *acc) {
     if (!dict)
         exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
 
@@ -588,8 +573,7 @@ void *reduce_dictionary(const p_dictionary dict,
 
 void *reduce_dictionary_with_args(
     const p_dictionary dict,
-    dictionary_iteration_callback_reduce_with_args callback, void *acc,
-    void *args) {
+    dictionary_iteration_callback_reduce_with_args callback, void *acc, void *args) {
     if (!dict)
         exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
 
@@ -603,8 +587,8 @@ void *reduce_dictionary_with_args(
     return acc;
 }
 
-p_dictionary sort_dictionary(const p_dictionary dict,
-                             dictionary_iteration_callback_sort callback) {
+p_dictionary sort_dictionary(
+    const p_dictionary dict, dictionary_iteration_callback_sort callback) {
     if (!dict)
         exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
 
@@ -635,9 +619,8 @@ p_dictionary sort_dictionary(const p_dictionary dict,
     return new_dict;
 }
 
-p_dictionary sort_dictionary_with_args(const p_dictionary dict,
-                          dictionary_iteration_callback_sort_with_args callback,
-                          void *args) {
+p_dictionary sort_dictionary_with_args(
+    const p_dictionary dict, dictionary_iteration_callback_sort_with_args callback, void *args) {
     if (!dict)
         exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
 

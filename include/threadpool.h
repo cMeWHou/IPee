@@ -140,9 +140,7 @@ extern p_task make_task(threadpool_task_callback task_callback, void *args);
  *
  * @return Task.
  */
-extern p_task on_complete(p_task task,
-                          threadpool_complete_callback complete_callback,
-                          void *args);
+extern p_task on_complete(p_task task, threadpool_complete_callback complete_callback, void *args);
 
 /**
  * @brief Task completion callback.
@@ -150,8 +148,7 @@ extern p_task on_complete(p_task task,
  *
  * @return Task.
  */
-extern p_task on_final(p_task task,
-                       threadpool_release_callback release_callback);
+extern p_task on_final(p_task task, threadpool_release_callback release_callback);
 
 /**
  * @brief Run task.
