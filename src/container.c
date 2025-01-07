@@ -129,20 +129,28 @@ void release_container(p_container container) {
     if (app_container) {
         iterate_over_dictionary_with_args(
             app_container->elements_release_callback, (void *)release_service, app_container);
-        delete_dictionary(&app_container->services);
-        delete_dictionary(&app_container->elements_types);
-        delete_dictionary(&app_container->elements_initial_callback);
-        delete_dictionary(&app_container->elements_release_callback);
-        delete_dictionary(&app_container->elements_args);
-        delete_dictionary(&app_container->elements_refs);
+        delete_dictionary(app_container->services);
+        app_container->services = NULL;
+        delete_dictionary(app_container->elements_types);
+        app_container->elements_types = NULL;
+        delete_dictionary(app_container->elements_initial_callback);
+        app_container->elements_initial_callback = NULL;
+        delete_dictionary(app_container->elements_release_callback);
+        app_container->elements_release_callback = NULL;
+        delete_dictionary(app_container->elements_args);
+        app_container->elements_args = NULL;
+        delete_dictionary(app_container->elements_refs);
+        app_container->elements_refs = NULL;
     }
     pthread_mutex_unlock(&app_container->mutex);
     pthread_mutex_destroy(&app_container->mutex);
     remove_record_from_dictionary(containers, container->name);
 
     free(container);
-    if (containers->size == 0)
-        delete_dictionary(&containers);
+    if (containers->size == 0) {
+        delete_dictionary(containers);
+        containers = NULL;
+    }
 }
 
 void release_container_by_name(const char *name) {
@@ -327,8 +335,7 @@ void *get_service_from_global_container(char *key) {
     if (!containers)
         exit(IPEE_ERROR_CODE__CONTAINER__SERVICE_UNINITIALIZED);
 
-    p_container container =
-        (p_container)get_value_from_dictionary(containers, name_of(global));
+    p_container container = (p_container)get_value_from_dictionary(containers, name_of(global));
     if (!container)
         return NULL;
 
@@ -352,8 +359,7 @@ void *get_service_from_container_with_args(
         app_container->elements_types, key);
     switch (type) {
     case SERVICE_TYPE_SINGLETON:
-        void *instance =
-            get_value_from_dictionary(app_container->elements_refs, key);
+        void *instance = get_value_from_dictionary(app_container->elements_refs, key);
         if (!instance) {
             container_callback_function initial_callback = get_value_from_dictionary(
                     app_container->elements_initial_callback, key);
@@ -432,17 +438,16 @@ static void release_service(
 
     case SERVICE_TYPE_TRANSIENT:
         p_dictionary refs = get_value_from_dictionary(container->elements_refs, key);
-        if (refs && callback) {
+        if (refs && callback)
             iterate_over_dictionary_values(refs, (void *)callback);
-        }
-        delete_dictionary(&refs);
+        delete_dictionary(refs);
+        refs = NULL;
         break;
 
     case SERVICE_TYPE_GLBLVALUE:
         const char args = get_value_from_dictionary(container->elements_args, key);
-        if (callback) {
+        if (callback)
             callback(args);
-        }
         break;
 
     default:

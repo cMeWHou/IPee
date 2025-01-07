@@ -150,16 +150,16 @@ void unsubscribe(const char *context_name, const char *event_name, observable_ca
 
     if (!event->size) {
         remove_record_from_dictionary(context, event_name);
-        delete_dictionary(&event);
+        delete_dictionary(event);
     }
 
     if (!context->size) {
         remove_record_from_dictionary(events, context_name);
-        delete_dictionary(&context);
+        delete_dictionary(context);
     }
 
     if (!events->size)
-        delete_dictionary(&events);
+        delete_dictionary(events);
 }
 
 void unsubscribe_from_event(const char *context, const char *event_name) {
