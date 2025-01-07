@@ -252,9 +252,20 @@ extern p_dictionary create_dictionary_with_metadata(void *metadata);
  * @details
  * Delete dictionary and all its records.
  *
+ * @param dict Dictionary object.
+ */
+extern void delete_dictionary(p_dictionary dict);
+
+/**
+ * @brief Delete dictionary.
+ *
+ * @details
+ * Delete dictionary and all its records.
+ * Also set null to dictionary-pointer.
+ *
  * @param dict Dictionary object reference.
  */
-extern void delete_dictionary(p_dictionary *dict);
+extern void delete_dictionary_set_null(p_dictionary *dict);
 
 /**
  * @brief Add record to dictionary.

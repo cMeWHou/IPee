@@ -41,7 +41,7 @@ int dictionary_getValidValue_OK(void) {
 
     const char *expected = "thirdValue";
     const char *actual = get_value_from_dictionary(dictionary, "thirdKey");
-    delete_dictionary(&dictionary);
+    delete_dictionary(dictionary);
 
     const int result = is_equal(expected, actual);
     return ORDER_RESULT(result, 0);

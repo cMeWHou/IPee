@@ -10,16 +10,7 @@
  **********************************************************************************************/
 
 p_dictionary create_dictionary(void) {
-    p_dictionary dict = (p_dictionary)malloc(sizeof(dictionary_t));
-    if (!dict)
-        return NULL;
-
-    dict->size = 0;
-    dict->head = NULL;
-    dict->tail = NULL;
-    dict->metadata = NULL;
-
-    return dict;
+    return create_dictionary_with_metadata(NULL);
 }
 
 p_dictionary create_dictionary_with_metadata(void *metadata) {
@@ -35,7 +26,11 @@ p_dictionary create_dictionary_with_metadata(void *metadata) {
     return dict;
 }
 
-void delete_dictionary(p_dictionary *dict) {
+void delete_dictionary(p_dictionary dict) {
+    delete_dictionary_set_null(&dict);
+}
+
+void delete_dictionary_set_null(p_dictionary *dict) {
     if (!dict || !(*dict))
         exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
 
