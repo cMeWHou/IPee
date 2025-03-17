@@ -186,18 +186,35 @@ p_task run_task_with_args(p_task task, void *args) {
     if (!task)
         exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_TASK);
 
-    p_dictionary available_threads = filter_dictionary(thread_pool, filter_threads);
-    if (available_threads->size) {
-        task->metadata->args = args;
-        p_thread thread = get_head_value_from_dictionary(available_threads);
-        if (thread)
-            set_task_to_thread(thread, task);
-        else
-            exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_THREAD);
+    pthread_mutex_lock(&mutex);
 
-        return task;
+    p_dictionary available_threads = NULL;
+    clock_t before = clock();
+    long current_timestamp = 0;
+    do {
+        clock_t diff = clock() - before;
+        current_timestamp = diff * 1000 / CLOCKS_PER_SEC;
+
+        if (available_threads)
+            delete_dictionary(available_threads);
+        available_threads = filter_dictionary(thread_pool, filter_threads);
+    } while (!available_threads->size && current_timestamp < TASK_WAITING_TIMEOUT);
+
+    if (!available_threads->size) {
+        pthread_mutex_unlock(&mutex);
+        return NULL;
     }
-    return NULL;
+
+    task->metadata->args = args;
+    p_thread thread = get_head_value_from_dictionary(available_threads);
+    if (thread)
+        set_task_to_thread(thread, task);
+    else
+        exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_THREAD);
+    
+    pthread_mutex_unlock(&mutex);
+
+    return task;
 }
 
 p_task start_task(threadpool_task_callback callback, void *args) {
