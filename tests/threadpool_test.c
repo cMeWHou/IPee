@@ -57,6 +57,9 @@ int threadpool_onComplete_OK(void);
 /** @brief Threadpool test. */
 int threadpool_exceedingThreads_OK(void);
 
+/** @brief Threadpool test. */
+int threadpool_cancelTask_OK(void);
+
 /*********************************************************************************************
 * FUNCTIONS DEFINITIONS
 ********************************************************************************************/
@@ -69,6 +72,7 @@ int threadpool_test(int argc, char *argv[]) {
     exit_result |= threadpool_awaitTask_OK();
     exit_result |= threadpool_onComplete_OK();
     exit_result |= threadpool_exceedingThreads_OK();
+    exit_result |= threadpool_cancelTask_OK();
     
     destroy_thread_pool();
     return exit_result;
@@ -116,8 +120,18 @@ int threadpool_exceedingThreads_OK(void) {
     p_task task14 = run_task(make_task(threadpool_exceeding_callback, "actual"));
     p_task task15 = run_task(make_task(threadpool_exceeding_callback, "actual"));
     
-    void *res = await_task(task15);
-    return ORDER_RESULT(1, 2);
+    const int result = is_equal(await_task(task15), "actual");
+    return ORDER_RESULT(result, 2);
+}
+
+int threadpool_cancelTask_OK(void) {
+    p_task task0 = run_task(make_task(threadpool_exceeding_callback, "actual"));
+    cancel_task(task0);
+
+    p_task task1 = run_task(make_task(threadpool_exceeding_callback, "actual"));
+
+    const int result = is_equal(await_task(task1), "actual");
+    return ORDER_RESULT(1, 3);
 }
 
 /***********************************************************************************************
