@@ -1,4 +1,4 @@
-/**
+/*********************************************************************************************
  * @file threadpool.h
  * @author chcp (cmewhou@yandex.ru)
  * @brief Common threadpool implementation.
@@ -6,7 +6,7 @@
  * @date 2024-11-16
  *
  * @copyright Copyright (c) 2024
- */
+ ********************************************************************************************/
 
 #ifndef IPEE_THREADPOOL_H
 #define IPEE_THREADPOOL_H
@@ -129,6 +129,14 @@ extern void init_thread_pool(void);
  * @return Task.
  */
 extern p_task make_task(threadpool_task_callback task_callback, void *args);
+
+/**
+ * @brief Cancel running task.
+ * 
+ * @param task Task.
+ * @return Task.
+ */
+extern int cancel_task(p_task task);
 
 /**
  * @brief Task completion callback.

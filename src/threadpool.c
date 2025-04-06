@@ -225,12 +225,17 @@ void *await_task(p_task task) {
     if (!task)
         exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_TASK);
 
+    p_task_metadata metadata = task->metadata;
+
     clock_t before = clock();
     long current_timestamp = 0;
     do {
         clock_t diff = clock() - before;
         current_timestamp = diff * 1000 / CLOCKS_PER_SEC;
-    } while (!task->is_done && current_timestamp < TASK_WAITING_TIMEOUT);
+    } while (metadata && !task->is_done && current_timestamp < TASK_WAITING_TIMEOUT);
+
+    if (!metadata)
+        return NULL;
 
     void *result = task->result;
 
@@ -241,6 +246,39 @@ void *await_task(p_task task) {
     }
 
     return result;
+}
+
+int cancel_task(p_task task) {
+    if (!thread_pool)
+        exit(IPEE_ERROR_CODE__THREADPOOL__SERVICE_UNINITIALIZED);
+
+    if (!task || !task->metadata || !task->is_running)
+        return 0;
+
+    p_thread thread = task->metadata->thread;
+    if (!thread)
+        return 0;
+
+    int cancel_result = pthread_cancel(thread->thread);
+    if (cancel_result)
+        return 0;
+
+    thread->task = NULL;
+    thread->is_buzy = 0;
+    thread->is_running = 1;
+    pthread_create(&thread->thread, NULL, task_invoker, thread);
+
+    p_task_metadata metadata = task->metadata;
+    task->metadata->thread = NULL;
+    free(metadata);
+
+    task->metadata = NULL;
+    task->is_done = 0;
+    task->is_running = 0;
+    task->result = NULL;
+    free(task);
+
+    return 1;
 }
 
 p_task on_complete(p_task task, threadpool_complete_callback complete_callback, void *args) {
@@ -302,15 +340,17 @@ static void *task_invoker(p_thread thread) {
 
     while (thread->is_running) {
         p_task task = thread->task;
-        if (!task || task->is_running) continue;
+        if (!task || task->is_running)
+            continue;
         task->is_running = 1;
 
         p_task_metadata metadata = task->metadata;
-        if (!metadata) continue;
+        if (!metadata)
+            continue;
 
         void *result = metadata->callback(metadata->args);
-        task->is_done = 1;
         task->result = result;
+        task->is_done = 1;
         if (task->metadata->release_type == TASK_RELEASE_TYPE_IMMEDIATE) {
             emit_on_complete(task);
             if (task->metadata->release_callback)

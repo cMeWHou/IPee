@@ -207,6 +207,9 @@ char *prepare_event_name(const char *context, const char *event, const int id) {
     const int id_length = get_number_length(id);
 
     const char *event_name = malloc(strlen(context) + 1 + strlen(event) + 1 + id_length + 1);
+    if (!event_name)
+        exit(IPEE_ERROR_CODE__EVENT__NAME_CREATION_ERROR);
+
     sprintf(event_name, "%s_%s_%d", context, event, id);
 
     return event_name;

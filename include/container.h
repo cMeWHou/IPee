@@ -1,4 +1,4 @@
-/**
+/*********************************************************************************************
  * @file container.h
  * @author chcp (cmewhou@yandex.ru)
  * @brief Common container for global access to application services.
@@ -6,7 +6,7 @@
  * @date 2024-11-18
  *
  * @copyright Copyright (c) 2024
- */
+ ********************************************************************************************/
 
 #ifndef IPEE_CONTAINER_H
 #define IPEE_CONTAINER_H
