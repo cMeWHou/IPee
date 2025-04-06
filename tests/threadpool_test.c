@@ -131,7 +131,7 @@ int threadpool_cancelTask_OK(void) {
     p_task task1 = run_task(make_task(threadpool_exceeding_callback, "actual"));
 
     const int result = is_equal(await_task(task1), "actual");
-    return ORDER_RESULT(1, 3);
+    return ORDER_RESULT(result, 3);
 }
 
 /***********************************************************************************************
