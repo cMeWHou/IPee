@@ -1,4 +1,4 @@
-/**
+/*********************************************************************************************
  * @file event.h
  * @author chcp (cmewhou@yandex.ru)
  * @brief Common event system.
@@ -6,7 +6,7 @@
  * @date 2024-11-19
  *
  * @copyright Copyright (c) 2024
- */
+ ********************************************************************************************/
 
 #ifndef IPEE_EVENT_H
 #define IPEE_EVENT_H
@@ -58,7 +58,8 @@ extern p_dictionary get_context_events(const char *context);
  * @param event Event name.
  * @return Context event subscribers.
  */
-extern p_dictionary get_context_event_subscribers(const char *context, const char *event);
+extern p_dictionary get_context_event_subscribers(
+    const char *context, const char *event);
 
 /**
  * @brief Subscribe to event globally.
@@ -130,7 +131,8 @@ extern void global_unsubscribe(const char *event, observable_callback callback);
  * @param context Context to unsubscribe from.
  * @param event Event to unsubscribe from.
  */
-extern void unsubscribe(const char *context, const char *event, observable_callback callback);
+extern void unsubscribe(const char *context, 
+    const char *event, observable_callback callback);
 
 /**
  * @brief Unsubscribe from event.

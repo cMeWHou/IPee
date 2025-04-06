@@ -54,6 +54,9 @@ void add_record_to_dictionary_with_metadata(
         exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
 
     p_record record = (p_record)malloc(sizeof(record_t));
+    if (!record)
+        exit(IPEE_ERROR_CODE__DICTIONARY__RECORD_CREATION_ERROR);
+
     record->key = key;
     record->value = value;
     record->next = NULL;
@@ -90,6 +93,9 @@ void add_record_to_dictionary_by_index_with_metadata(
         exit(IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS);
 
     p_record record = (p_record)malloc(sizeof(record_t));
+    if (!record)
+        exit(IPEE_ERROR_CODE__DICTIONARY__RECORD_CREATION_ERROR);
+
     record->key = key;
     record->value = value;
     record->next = NULL;
