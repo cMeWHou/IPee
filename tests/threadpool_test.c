@@ -2,8 +2,8 @@
 * @file threadpool.test.c
 * @author chcp (cmewhou@yandex.ru)
 * @brief Threadpool tests.
-* @version 1.0
-* @date 2024-11-13
+* @version 1.1
+* @date 2025-04-08
 *
 * @copyright Copyright (c) 2024
 */

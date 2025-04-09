@@ -69,12 +69,18 @@ static int MAX_CONTAINER_SIZE = 255;
  * FUNCTIONS DEFINITIONS
  ********************************************************************************************/
 
-void set_max_service_count(int count) { 
-    MAX_CONTAINER_SIZE = count; 
+void set_max_service_count(int count) {
+    if (containers)
+        exit(IPEE_ERROR_CODE__CONTAINER__SERVICE_ALREADY_INITIALIZED);
+
+    MAX_CONTAINER_SIZE = count;
 }
 
-void set_max_transient_service_count(int count) { 
-    MAX_TRANSIENT_REFS = count; 
+void set_max_transient_service_count(int count) {
+    if (containers)
+        exit(IPEE_ERROR_CODE__CONTAINER__SERVICE_ALREADY_INITIALIZED);
+
+    MAX_TRANSIENT_REFS = count;
 }
 
 p_dictionary get_all_containers(void) { 

@@ -2,8 +2,8 @@
  * @file threadpool.h
  * @author chcp (cmewhou@yandex.ru)
  * @brief Common threadpool implementation.
- * @version 1.2
- * @date 2024-11-16
+ * @version 1.3
+ * @date 2025-04-08
  *
  * @copyright Copyright (c) 2024
  ********************************************************************************************/

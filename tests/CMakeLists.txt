@@ -1,6 +1,7 @@
 set(PROJECT_TESTS ${PROJECT}Tests)
 set(AVAILABLE_TESTS
   "dictionary_test.c"
+  "bitmap_test.c"
   "container_test.c"
   "event_test.c"
   "threadpool_test.c"

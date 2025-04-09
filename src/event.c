@@ -86,8 +86,7 @@ p_dictionary get_context_events(const char *context_name) {
 p_dictionary get_context_event_subscribers(const char *context_name, const char *event_name) {
     if (!events)
         return NULL;
-    p_dictionary context =
-        (p_dictionary)get_value_from_dictionary(events, context_name);
+    p_dictionary context = (p_dictionary)get_value_from_dictionary(events, context_name);
 
     if (!context)
         return NULL;
