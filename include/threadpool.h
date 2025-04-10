@@ -34,6 +34,7 @@ typedef struct thread_s thread_t, *p_thread;
  */
 typedef struct task_metadata_s {
     int task_id;                            // Task Id.
+    char *task_event_name;                  // Task event name.
     p_thread thread;                        // Thread.
     void *(*callback)(void *args);          // Task callback.
     void *args;                             // Task callback arguments.
