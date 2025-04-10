@@ -169,6 +169,7 @@ p_task make_task(threadpool_task_callback callback, void *args) {
     set_bit(task_bitmap, internal_task_counter);
 
     metadata->task_id = internal_task_counter;
+    metadata->task_event_name = prepare_event_name(threadpool_context_name, threadpool_complete_event_name, metadata->task_id);
     metadata->callback = callback;
     metadata->args = args;
     metadata->thread = NULL;
@@ -286,10 +287,7 @@ p_task on_complete(p_task task, threadpool_complete_callback complete_callback, 
     if (!task)
         exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_TASK);
 
-    const char *event_name = prepare_event_name(threadpool_context_name,
-                                                threadpool_complete_event_name,
-                                                task->metadata->task_id);
-    subscribe_with_args(threadpool_context_name, event_name, complete_callback, args);
+    subscribe_with_args(threadpool_context_name, task->metadata->task_event_name, complete_callback, args);
 
     return task;
 }
@@ -328,6 +326,9 @@ void destroy_thread_pool(void) {
     iterate_over_dictionary_values(thread_pool, destroy_thread);
     pthread_mutex_destroy(&mutex);
     delete_dictionary(thread_pool);
+    release_bitmap(task_bitmap);
+
+    task_bitmap = NULL;
     thread_pool = NULL;
 }
 
@@ -402,6 +403,8 @@ static void default_task_release_callback(p_task task) {
         exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_TASK);
 
     p_task_metadata metadata = task->metadata;
+    free(task->metadata->task_event_name);
+    task->metadata->task_event_name = NULL;
     task->metadata->thread = NULL;
     reset_bit(task_bitmap, task->metadata->task_id);
     free(metadata);
@@ -417,13 +420,10 @@ static void emit_on_complete(p_task task) {
     if (!task)
         exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_TASK);
 
-    const char *event_name = prepare_event_name(threadpool_context_name,
-                                                threadpool_complete_event_name,
-                                                task->metadata->task_id);
+    const char *event_name = task->metadata->task_event_name;
     p_dictionary subscribers = get_context_event_subscribers(threadpool_context_name, event_name);
     if (subscribers) {
         notify(threadpool_context_name, event_name, task->result);
         unsubscribe_from_event(threadpool_context_name, event_name);
     }
-    free(event_name);
 }
