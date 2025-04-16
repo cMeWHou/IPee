@@ -18,12 +18,6 @@
 #include <stdint.h>
 
 /*********************************************************************************************
- * MACROS DECLARATIONS
- ********************************************************************************************/
-
-
-
-/*********************************************************************************************
  * STRUCTS DECLARATIONS
  ********************************************************************************************/
 
@@ -111,5 +105,13 @@ extern int hashmap_get_count(p_hashmap map);
  * @param callback  Callback function.
  */
 extern void hashmap_iterate(p_hashmap map, hashmap_iteration_callback callback);
+
+/*********************************************************************************************
+ * MACROS DECLARATIONS
+ ********************************************************************************************/
+
+#define HASHMAP_INPUT_ITEMS(map, key_arr, val_arr, count)                                   \
+    for (unsigned i = 0; i < count; i++)                                                    \
+        hashmap_set_entry(map, key_arr[i], &val_arr[i]);
 
 #endif // IPEE_HASHMAP_H
