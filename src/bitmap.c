@@ -5,6 +5,9 @@
 
 #include <macro.h>
 
+#undef  __MODULE__
+#define __MODULE__ IPEE_API_BITMAP
+
 #define BITMAP_BITS_PER_CHAR 8
 #define BITMAP_BITS_PER_CHAR_WITH_OFFSET BITMAP_BITS_PER_CHAR - 1
 
