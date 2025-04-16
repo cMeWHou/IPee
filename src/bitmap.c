@@ -4,6 +4,10 @@
 #include <string.h>
 
 #include <macro.h>
+#include <logger.h>
+
+#undef  __MODULE__
+#define __MODULE__ IPEE_API_BITMAP
 
 #define BITMAP_BITS_PER_CHAR 8
 #define BITMAP_BITS_PER_CHAR_WITH_OFFSET BITMAP_BITS_PER_CHAR - 1
@@ -13,6 +17,7 @@
  ********************************************************************************************/
 
 p_bitmap init_bitmap(const int capacity) {
+    EE_ENTER();
     p_bitmap bitmap = (p_bitmap)malloc(sizeof(bitmap_t));
     if (!bitmap)
         return NULL;
@@ -22,6 +27,7 @@ p_bitmap init_bitmap(const int capacity) {
     bitmap->buffer = (char *)malloc(num_bytes * sizeof(char));
     memset(bitmap->buffer, 0, num_bytes);
 
+    EE_EXIT();
     return bitmap;
 }
 

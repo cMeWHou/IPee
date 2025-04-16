@@ -44,11 +44,26 @@ add_library(${THREADPOOL_LIB} ${THREADPOOL_SRC})
 target_include_directories(${THREADPOOL_LIB} PUBLIC ${INCLUDE_PATH})
 target_link_libraries(${THREADPOOL_LIB} ${DICTIONARY_LIB} ${EVENT_LIB} ${BITMAP_LIB})
 
+# Logger
+set(LOGGER_SRC "${CMAKE_SOURCE_DIR}/src/logger.c")
+set(LOGGER_LIB ${PROJECT}Logger)
+add_library(${LOGGER_LIB} ${LOGGER_SRC})
+target_include_directories(${LOGGER_LIB} PUBLIC ${INCLUDE_PATH})
+
 # All
-set(PROJECT_SRC ${DICTIONARY_SRC} ${CONTAINER_SRC} ${EVENT_SRC} ${HASHMAP_SRC} ${BITMAP_SRC} ${THREADPOOL_SRC})
+set(PROJECT_SRC ${DICTIONARY_SRC} ${CONTAINER_SRC} ${EVENT_SRC} ${HASHMAP_SRC} ${BITMAP_SRC} ${THREADPOOL_SRC} ${LOGGER_SRC})
 set(PROJECT_LIB ${PROJECT})
 add_library(${PROJECT_LIB} ${PROJECT_SRC})
 target_include_directories(${PROJECT_LIB} PUBLIC ${INCLUDE_PATH})
+
+# This definition is used to turn off logging
+# target_compile_definitions(${PROJECT_LIB} PUBLIC EE_LOG_OFF)
+
+# Need for clangd
+target_compile_definitions(${PROJECT_LIB} PUBLIC CMAKE_EXPORT_COMPILE_COMMANDS=1)
+
+# Copy logger configuration file to build directory
+file(COPY_FILE "${CMAKE_SOURCE_DIR}/cfg/config_logger" "${CMAKE_BINARY_DIR}/tests/config_logger" ONLY_IF_DIFFERENT)
 
 # Testing
 enable_testing()

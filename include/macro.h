@@ -51,4 +51,33 @@ typedef enum ipee_error_code_e {
     IPEE_ERROR_CODE__THREADPOOL__INVALID_TASK,
 } ipee_error_code_t, *p_ipee_error_code;
 
+/**
+ * @brief Defines API sets have assigned IDs.
+ */
+typedef enum ipee_api_e {
+    /** Unspecified API */
+    IPEE_API_UNSPECIFIED    = 0,
+
+    /** Bitmap API */
+    IPEE_API_BITMAP         = 1,
+
+    /** Container API */
+    IPEE_API_CONTAINER      = 2,
+
+    /** Dictionary API */
+    IPEE_API_DICTIONARY     = 3,
+
+    /** Event API */
+    IPEE_API_EVENT          = 4,
+
+    /** Logger API */
+    IPEE_API_LOGGER         = 5,
+
+    /** Threadpool API */
+    IPEE_API_THREADPOOL     = 6,
+
+    /** Total number of APIs */
+    IPEE_API_MAX
+} ipee_api_t, *p_ipee_api;
+
 #endif // IPEE_MACRO_H
