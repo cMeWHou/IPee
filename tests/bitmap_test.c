@@ -47,7 +47,7 @@ int bitmap_test(int argc, char *argv[]) {
 
 int bitmap_setSpecialBits_OK(void) {
     const int size = 10;
-    p_bitmap bitmap = init_bitmap(size);
+    p_bitmap bitmap = create_bitmap(size);
 
     set_bit(bitmap, 2);
     set_bit(bitmap, bitmap->capacity - 1);
@@ -58,13 +58,13 @@ int bitmap_setSpecialBits_OK(void) {
     if (memcmp(expected, bitmap->buffer, 2) == 0)
         result = 1;
 
-    release_bitmap(bitmap);
+    delete_bitmap(bitmap);
     return ORDER_RESULT(result, 0);
 }
 
 int bitmap_getFirstOrLastBit_OK(void) {
     const int size = 10;
-    p_bitmap bitmap = init_bitmap(size);
+    p_bitmap bitmap = create_bitmap(size);
 
     int result = 1;
     fill_bitmap(bitmap, 0, bitmap->capacity - 1);
@@ -76,13 +76,13 @@ int bitmap_getFirstOrLastBit_OK(void) {
     if (bitmap->buffer[0] != 0x0 || bitmap->buffer[1] != 0x0)
         result = 0;
 
-    release_bitmap(bitmap);
+    delete_bitmap(bitmap);
     return ORDER_RESULT(result, 1);
 }
 
 int bitmap_clearFillBitmap_OK(void) {
     const int size = 10;
-    p_bitmap bitmap = init_bitmap(size);
+    p_bitmap bitmap = create_bitmap(size);
 
     fill_bitmap(bitmap, 0, bitmap->capacity - 1);
     reset_bit(bitmap, 6);
@@ -97,14 +97,14 @@ int bitmap_clearFillBitmap_OK(void) {
     int firstBusyBit = get_first_busy_bit(bitmap);
     int lastBusyBit = get_last_busy_bit(bitmap);
 
-    release_bitmap(bitmap);
+    delete_bitmap(bitmap);
     int result = firstFreeBit == 6 && lastFreeBit == 9 && firstBusyBit == 6 && lastBusyBit == 9;
     return ORDER_RESULT(result, 2);
 }
 
 int bitmap_invertBit_OK(void) {
     const int size = 10;
-    p_bitmap bitmap = init_bitmap(size);
+    p_bitmap bitmap = create_bitmap(size);
 
     fill_bitmap(bitmap, 0, bitmap->capacity - 1);
     reset_bit(bitmap, 6);
@@ -114,7 +114,7 @@ int bitmap_invertBit_OK(void) {
     int firstFreeBit = get_first_free_bit(bitmap);
     int lastFreeBit = get_last_free_bit(bitmap);
 
-    release_bitmap(bitmap);
+    delete_bitmap(bitmap);
     int result = firstFreeBit == 7 && lastFreeBit == 8;
     return ORDER_RESULT(result, 3);
 }

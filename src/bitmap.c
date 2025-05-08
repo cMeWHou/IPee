@@ -12,7 +12,7 @@
  * FUNCTIONS DEFINITIONS
  ********************************************************************************************/
 
-p_bitmap init_bitmap(const int capacity) {
+p_bitmap create_bitmap(const int capacity) {
     p_bitmap bitmap = (p_bitmap)malloc(sizeof(bitmap_t));
     if (!bitmap)
         return NULL;
@@ -25,7 +25,7 @@ p_bitmap init_bitmap(const int capacity) {
     return bitmap;
 }
 
-void release_bitmap(p_bitmap bitmap) {
+void delete_bitmap(p_bitmap bitmap) {
     if (!bitmap)
         return;
 

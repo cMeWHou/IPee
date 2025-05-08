@@ -5,7 +5,7 @@
  * @version 1.3
  * @date 2025-04-08
  *
- * @copyright Copyright (c) 2024
+ * @copyright Copyright (c) 2024 - 2025
  ********************************************************************************************/
 
 #ifndef IPEE_THREADPOOL_H
@@ -35,6 +35,13 @@ typedef struct thread_s thread_t, *p_thread;
 typedef struct task_metadata_s {
     int task_id;                            // Task Id.
     char *task_event_name;                  // Task event name.
+    int task_priority;                      // Task priority.
+    long task_delay;                        // Task delay.
+    long task_interval;                     // Task timeout.
+    long task_interval_left_count;          // Task interval count limit.
+    int task_interval_infinity_loop;        // Task interval count limit.
+    long last_checking_time;                // Task last checking time.
+    long left_time_to_invokation;           // Time to invokation.
     p_thread thread;                        // Thread.
     void *(*callback)(void *args);          // Task callback.
     void *args;                             // Task callback arguments.
@@ -113,7 +120,7 @@ extern void set_internal_task_counter_limit(int limit);
 /**
  * @brief Set task waiting timeout.
  *
- * @param timeout Task waiting timeout.
+ * @param timeout Task waiting timeout (in ms).
  */
 extern void set_task_waiting_timeout(int timeout);
 
@@ -161,12 +168,35 @@ extern p_task on_complete(p_task task, threadpool_complete_callback complete_cal
 extern p_task on_final(p_task task, threadpool_release_callback release_callback);
 
 /**
- * @brief Run task.
+ * @brief Set task delay.
  *
  * @param task Task.
+ * @param delay Delay (in ms).
+ *
  * @return Task.
  */
-extern p_task run_task(p_task task);
+extern p_task with_delay(p_task task, int delay);
+
+/**
+ * @brief Set task interval.
+ *
+ * @param task Task.
+ * @param interval Interval (in ms).
+ * @param count Times to repeat (0 for infinity).
+ *
+ * @return Task.
+ */
+extern p_task with_interval(p_task task, int interval, int count);
+
+/**
+ * @brief Set task priority.
+ *
+ * @param task Task.
+ * @param priority Priority (0 - max priority, other positive value - less priority).
+ *
+ * @return Task.
+ */
+extern p_task with_priority(p_task task, int priority);
 
 /**
  * @brief Execute on_complete and on_final immediately after task completion.
@@ -186,6 +216,14 @@ extern p_task as_immediate(p_task task);
  * @return Task.
  */
 extern p_task as_manual(p_task task);
+
+/**
+ * @brief Run task.
+ *
+ * @param task Task.
+ * @return Task.
+ */
+extern p_task run_task(p_task task);
 
 /**
  * @brief Run task with custom arguments.

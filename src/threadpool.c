@@ -62,6 +62,31 @@ static void destroy_thread(const p_thread thread);
  */
 static void emit_on_complete(p_task task);
 
+/**
+ * @brief Controls the task queue.
+ */
+static void *task_queue_scheduler();
+
+/**
+ * @brief Controls the task queue.
+ */
+static void *task_queue_scheduler();
+
+/**
+ * @brief Sorts the task queue by priority.
+ */
+static dictionary_iteration_callback_sort sort_task_queue;
+
+/**
+ * @brief Updates the priority of queue tasks.
+ */
+static dictionary_iteration_values_callback update_task_priority;
+
+/**
+ * @brief Returns current clocks.
+ */
+static inline long current_clock_ms();
+
 /*********************************************************************************************
  * STATIC VARIABLES
  ********************************************************************************************/
@@ -70,6 +95,11 @@ static void emit_on_complete(p_task task);
  * @brief The thread pool.
  */
 static p_dictionary thread_pool = NULL;
+
+/**
+ * @brief The task queue.
+ */
+static p_dictionary task_queue = NULL;
 
 /**
  * @brief The task bitmap.
@@ -125,13 +155,15 @@ void set_task_waiting_timeout(int timeout) {
 void init_thread_pool(void) {
     if (!thread_pool) {
         pthread_mutex_init(&mutex, NULL);
-        thread_pool = create_dictionary();
+        pthread_mutex_lock(&mutex);
 
-        task_bitmap = init_bitmap(INTERNAL_TASK_COUNTER_LIMIT);
+        thread_pool = create_dictionary();
+        task_queue = create_dictionary();
+        task_bitmap = create_bitmap(INTERNAL_TASK_COUNTER_LIMIT);
+
+        p_task queue_scheduler = make_task(task_queue_scheduler, NULL);
 
         for (int i = 0; i < THREAD_POOL_SIZE; i++) {
-            pthread_mutex_lock(&mutex);
-
             p_thread thread = (p_thread)malloc(sizeof(thread_t));
             if (!thread)
                 exit(IPEE_ERROR_CODE__THREADPOOL__THREAD_CREATION_ERROR);
@@ -142,9 +174,11 @@ void init_thread_pool(void) {
 
             pthread_create(&thread->thread, NULL, task_invoker, thread);
             add_record_to_dictionary(thread_pool, i, thread);
-
-            pthread_mutex_unlock(&mutex);
         }
+
+        run_task(queue_scheduler);
+
+        pthread_mutex_unlock(&mutex);
     }
 }
 
@@ -175,87 +209,16 @@ p_task make_task(threadpool_task_callback callback, void *args) {
     metadata->thread = NULL;
     metadata->release_callback = default_task_release_callback;
     metadata->release_type = TASK_RELEASE_TYPE_DEFAULT;
+    metadata->task_priority = 5;
+    metadata->task_delay = 0;
+    metadata->task_interval = 0;
+    metadata->last_checking_time = 0;
+    metadata->left_time_to_invokation = 0;
+    metadata->task_interval_left_count = 1;
 
     task->metadata = metadata;
 
     return task;
-}
-
-p_task run_task(p_task task) {
-    return run_task_with_args(task, task->metadata->args);
-}
-
-p_task run_task_with_args(p_task task, void *args) {
-    if (!thread_pool)
-        exit(IPEE_ERROR_CODE__THREADPOOL__SERVICE_UNINITIALIZED);
-    if (!task)
-        exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_TASK);
-
-    pthread_mutex_lock(&mutex);
-
-    p_dictionary available_threads = NULL;
-    clock_t before = clock();
-    long current_timestamp = 0;
-    do {
-        clock_t diff = clock() - before;
-        current_timestamp = diff * 1000 / CLOCKS_PER_SEC;
-
-        if (available_threads)
-            delete_dictionary(available_threads);
-        available_threads = filter_dictionary(thread_pool, filter_threads);
-    } while (!available_threads->size && current_timestamp < TASK_WAITING_TIMEOUT);
-
-    if (!available_threads->size) {
-        pthread_mutex_unlock(&mutex);
-        return NULL;
-    }
-
-    task->metadata->args = args;
-    p_thread thread = get_head_value_from_dictionary(available_threads);
-    if (thread)
-        set_task_to_thread(thread, task);
-    else
-        exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_THREAD);
-    
-    pthread_mutex_unlock(&mutex);
-
-    return task;
-}
-
-p_task start_task(threadpool_task_callback callback, void *args) {
-    return run_task(make_task(callback, args));
-}
-
-void *await_task(p_task task) {
-    if (!task)
-        exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_TASK);
-
-    p_task_metadata metadata = task->metadata;
-
-    clock_t before = clock();
-    long current_timestamp = 0;
-    do {
-        clock_t diff = clock() - before;
-        current_timestamp = diff * 1000 / CLOCKS_PER_SEC;
-    } while (metadata && !task->is_done && current_timestamp < TASK_WAITING_TIMEOUT);
-
-    if (!metadata)
-        return NULL;
-
-    if (task->is_running && !task->is_done) {
-        cancel_task(task);
-        return NULL;
-    }
-
-    void *result = task->result;
-
-    if (task->metadata->release_type == TASK_RELEASE_TYPE_DEFAULT) {
-        emit_on_complete(task);
-        if (task->metadata->release_callback)
-            task->metadata->release_callback(task);
-    }
-
-    return result;
 }
 
 int cancel_task(p_task task) {
@@ -301,6 +264,36 @@ p_task on_final(p_task task, threadpool_release_callback release_callback) {
     return task;
 }
 
+p_task with_delay(p_task task, int delay) {
+    if (!task)
+        exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_TASK);
+
+    task->metadata->task_delay = delay;
+
+    return task;
+}
+
+p_task with_interval(p_task task, int interval, int count) {
+    if (!task)
+        exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_TASK);
+
+    task->metadata->task_interval = interval;
+    task->metadata->task_interval_left_count = count;
+    if (!count)
+        task->metadata->task_interval_infinity_loop = 1;
+
+    return task;
+}
+
+p_task with_priority(p_task task, int priority) {
+    if (!task)
+        exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_TASK);
+
+    task->metadata->task_priority = priority;
+
+    return task;
+}
+
 p_task as_immediate(p_task task) {
     if (!task)
         exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_TASK);
@@ -319,17 +312,78 @@ p_task as_manual(p_task task) {
     return task;
 }
 
+p_task run_task(p_task task) {
+    return run_task_with_args(task, task->metadata->args);
+}
+
+p_task run_task_with_args(p_task task, void *args) {
+    if (!thread_pool)
+        exit(IPEE_ERROR_CODE__THREADPOOL__SERVICE_UNINITIALIZED);
+    if (!task)
+        exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_TASK);
+
+    pthread_mutex_lock(&mutex);
+
+    task->metadata->args = args;
+
+    task->metadata->last_checking_time = current_clock_ms();
+    task->metadata->left_time_to_invokation = task->metadata->task_delay;
+    add_record_to_dictionary(task_queue, task->metadata->task_id, task);
+
+    pthread_mutex_unlock(&mutex);
+
+    return task;
+}
+
+p_task start_task(threadpool_task_callback callback, void *args) {
+    return run_task(make_task(callback, args));
+}
+
+void *await_task(p_task task) {
+    if (!task)
+        exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_TASK);
+
+    p_task_metadata metadata = task->metadata;
+
+    long before = current_clock_ms();
+    long current_timestamp = 0;
+    do {
+        current_timestamp = current_clock_ms() - before;
+    } while (metadata && !task->is_done && current_timestamp < TASK_WAITING_TIMEOUT);
+
+    if (!metadata)
+        return NULL;
+
+    if (task->is_running && !task->is_done) {
+        cancel_task(task);
+        return NULL;
+    }
+
+    void *result = task->result;
+
+    if (task->metadata->release_type == TASK_RELEASE_TYPE_DEFAULT) {
+        emit_on_complete(task);
+        if (task->metadata->release_callback)
+            task->metadata->release_callback(task);
+    }
+
+    return result;
+}
+
 void destroy_thread_pool(void) {
     if (!thread_pool)
         exit(IPEE_ERROR_CODE__THREADPOOL__SERVICE_UNINITIALIZED);
 
+    delete_dictionary(task_queue);
+    task_queue = NULL;
+
     iterate_over_dictionary_values(thread_pool, destroy_thread);
     pthread_mutex_destroy(&mutex);
     delete_dictionary(thread_pool);
-    release_bitmap(task_bitmap);
-
-    task_bitmap = NULL;
     thread_pool = NULL;
+
+    delete_bitmap(task_bitmap);
+    task_bitmap = NULL;
 }
 
 /***********************************************************************************************
@@ -353,11 +407,20 @@ static void *task_invoker(p_thread thread) {
         void *result = metadata->callback(metadata->args);
         task->result = result;
         task->is_done = 1;
-        if (task->metadata->release_type == TASK_RELEASE_TYPE_IMMEDIATE) {
+
+        if (metadata->task_interval_left_count > 0 || metadata->task_interval_infinity_loop) {
             emit_on_complete(task);
-            if (task->metadata->release_callback)
-                task->metadata->release_callback(task);
+            // p_task next_task = from_task(task);
+            metadata->task_delay = metadata->task_interval;
+            run_task(task);
+        } else {
+            if (task->metadata->release_type == TASK_RELEASE_TYPE_IMMEDIATE) {
+                emit_on_complete(task);
+                if (task->metadata->release_callback)
+                    task->metadata->release_callback(task);
+            }
         }
+
         thread->task = NULL;
         thread->is_buzy = 0;
     }
@@ -392,6 +455,11 @@ static void destroy_thread(p_thread thread) {
     pthread_mutex_lock(&mutex);
 
     thread->is_running = 0;
+    if (thread->is_buzy) {
+        p_task task = thread->task;
+        if (task)
+            cancel_task(task);
+    }
     pthread_cancel(thread->thread);
     free(thread);
 
@@ -426,4 +494,81 @@ static void emit_on_complete(p_task task) {
         notify(threadpool_context_name, event_name, task->result);
         unsubscribe_from_event(threadpool_context_name, event_name);
     }
+}
+
+static void *task_queue_scheduler() {
+    while(thread_pool) {
+        const p_dictionary sorted_queue = sort_dictionary(task_queue, sort_task_queue);
+        delete_dictionary(task_queue);
+
+        iterate_over_dictionary_values(sorted_queue, update_task_priority);
+        task_queue = sorted_queue;
+
+        p_record first_task_record = get_head_value_from_dictionary(task_queue);
+        if (!first_task_record)
+            continue;
+
+        p_task task = (p_task)first_task_record->value;
+        p_task_metadata metadata = task->metadata;
+
+        if (metadata->left_time_to_invokation / 1000 > 0)
+            continue;
+
+        p_dictionary available_threads = NULL;
+        long before = current_clock_ms();
+        long current_timestamp = 0;
+        do {
+            current_timestamp = current_clock_ms() - before;
+
+            if (available_threads)
+                delete_dictionary(available_threads);
+            available_threads = filter_dictionary(thread_pool, filter_threads);
+        } while (!available_threads->size && current_timestamp < TASK_WAITING_TIMEOUT);
+
+        if (!available_threads->size)
+            continue;
+
+        p_thread thread = get_head_value_from_dictionary(available_threads);
+        if (thread) {
+            remove_record_from_dictionary_by_index(task_queue, 0);
+            set_task_to_thread(thread, task);
+        }
+        else
+            exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_THREAD);
+    }
+}
+
+static int filter_task_queue(const p_record record, int _1, const p_dictionary _2) {
+    p_task task = (p_task)record->value;
+
+    return 1;
+}
+
+static int sort_task_queue(const p_record record1, const p_record record2) {
+    p_task task1 = (p_task)record1->value;
+    p_task task2 = (p_task)record2->value;
+
+    return task1->metadata->task_priority > task2->metadata->task_priority;
+}
+
+static void update_task_priority(void *value) {
+    p_task task = (p_task)value;
+
+    const long current_time_in_ms = current_clock_ms();
+    const long last_checking_time = task->metadata->last_checking_time;
+    task->metadata->last_checking_time = current_time_in_ms;
+
+    const long diff = current_time_in_ms - last_checking_time;
+    task->metadata->left_time_to_invokation -= diff;
+
+    if (task->metadata->left_time_to_invokation / 1000 <= 0)
+        task->metadata->task_priority = 0;
+    else if (task->metadata->left_time_to_invokation / 1000 >= 5)
+        task->metadata->task_priority++;
+    else if (task->metadata->task_priority > 0)
+        task->metadata->task_priority--;
+}
+
+static inline long current_clock_ms() {
+    return clock() * 1000 / CLOCKS_PER_SEC;
 }

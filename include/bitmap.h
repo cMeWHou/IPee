@@ -5,7 +5,7 @@
  * @version 1.0
  * @date 2025-04-08
  *
- * @copyright Copyright (c) 2024
+ * @copyright Copyright (c) 2025
  ********************************************************************************************/
 
 #ifndef IPEE_BITMAP_H
@@ -35,14 +35,14 @@ typedef struct bitmap_s {
  *
  * @param capacity Bitmap capacity.
  */
-extern p_bitmap init_bitmap(const int capacity);
+extern p_bitmap create_bitmap(const int capacity);
 
 /**
  * @brief Release container by reference.
  *
  * @param bitmap Bitmap collection.
  */
-extern void release_bitmap(p_bitmap bitmap);
+extern void delete_bitmap(p_bitmap bitmap);
 
 /**
  * @brief Get bit in bitmap by index.
