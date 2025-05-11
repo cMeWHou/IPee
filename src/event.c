@@ -7,9 +7,9 @@
 #include <dictionary.h>
 #include <macro.h>
 
-/***********************************************************************************************
+/*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
- **********************************************************************************************/
+ ******************************************************************************/
 
 /**
  * @brief Initialize event context.
@@ -18,6 +18,7 @@
  * Create new context. Context is a container for events.
  *
  * @param context Context name.
+ *
  * @return Context.
  */
 static p_dictionary init_event_context(const char *context);
@@ -29,7 +30,8 @@ static p_dictionary init_event_context(const char *context);
  * Create new event.
  *
  * @param event_context Context name.
- * @param name Event name.
+ * @param name          Event name.
+ *
  * @return Event.
  */
 static p_dictionary init_event(p_dictionary event_context, const char *name);
@@ -41,7 +43,7 @@ static p_dictionary init_event(p_dictionary event_context, const char *name);
  * Invokes callback function.
  *
  * @param record Callback.
- * @param args Arguments.
+ * @param args   Arguments.
  */
 static void callback_invoker(p_record record, void *args);
 
@@ -52,13 +54,14 @@ static void callback_invoker(p_record record, void *args);
  * Get number length.
  *
  * @param number Number.
+ *
  * @return Number length.
  */
 static int get_number_length(int number);
 
-/*********************************************************************************************
+/*******************************************************************************
  * STATIC VARIABLES
- ********************************************************************************************/
+ ******************************************************************************/
 
 /**
  * @brief Events dictionary.
@@ -68,9 +71,9 @@ static int get_number_length(int number);
  */
 static p_dictionary events = NULL;
 
-/*********************************************************************************************
+/*******************************************************************************
  * FUNCTIONS DEFINITIONS
- ********************************************************************************************/
+ ******************************************************************************/
 
 p_dictionary get_context_list(void) { 
     return events;
@@ -86,10 +89,11 @@ p_dictionary get_context_events(const char *context_name) {
 p_dictionary get_context_event_subscribers(const char *context_name, const char *event_name) {
     if (!events)
         return NULL;
-    p_dictionary context = (p_dictionary)get_value_from_dictionary(events, context_name);
 
+    p_dictionary context = (p_dictionary)get_value_from_dictionary(events, context_name);
     if (!context)
         return NULL;
+
     return get_value_from_dictionary(context, event_name);
 }
 
@@ -97,8 +101,8 @@ void global_subscribe(const char *event_name, observable_callback callback) {
     global_subscribe_with_args(event_name, callback, NULL);
 }
 
-void global_subscribe_with_args(
-    const char *event_name, observable_callback_with_args callback, void *args) {
+void global_subscribe_with_args(const char *event_name,
+    observable_callback_with_args callback, void *args) {
     subscribe_with_args(name_of(global), event_name, callback, args);
 }
 
@@ -106,8 +110,8 @@ void subscribe(const char *context, const char *event_name, observable_callback 
     subscribe_with_args(context, event_name, callback, NULL);
 }
 
-void subscribe_with_args(
-    const char *context_name, const char *event_name, observable_callback_with_args callback, void *args) {
+void subscribe_with_args(const char *context_name,
+    const char *event_name, observable_callback_with_args callback, void *args) {
     if (!events)
         events = create_dictionary();
 
@@ -127,7 +131,8 @@ void global_unsubscribe(const char *event_name, observable_callback callback) {
     unsubscribe(name_of(global), event_name, callback);
 }
 
-void unsubscribe(const char *context_name, const char *event_name, observable_callback callback) {
+void unsubscribe(const char *context_name,
+    const char *event_name, observable_callback callback) {
     if (!events)
         exit(IPEE_ERROR_CODE__EVENT__SERVICE_UNINITIALIZED);
 
@@ -214,9 +219,9 @@ char *prepare_event_name(const char *context, const char *event, const int id) {
     return event_name;
 }
 
-/***********************************************************************************************
+/*******************************************************************************
  * STATIC FUNCTIONS DEFINITIONS
- **********************************************************************************************/
+ ******************************************************************************/
 
 static p_dictionary init_event_context(const char *context) {
     if (!events)

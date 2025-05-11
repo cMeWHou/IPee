@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1.0)
+cmake_minimum_required(VERSION 4.0)
 
 set(PROJECT IpEe)
 project(${PROJECT})
@@ -11,11 +11,11 @@ set(DICTIONARY_LIB ${PROJECT}Dictionary)
 add_library(${DICTIONARY_LIB} ${DICTIONARY_SRC})
 target_include_directories(${DICTIONARY_LIB} PUBLIC ${INCLUDE_PATH})
 
-# Bitmap collection
-set(BITMAP_SRC "${CMAKE_SOURCE_DIR}/src/bitmap.c")
-set(BITMAP_LIB ${PROJECT}Bitmap)
-add_library(${BITMAP_LIB} ${BITMAP_SRC})
-target_include_directories(${BITMAP_LIB} PUBLIC ${INCLUDE_PATH})
+# Bitset collection
+set(BITSET_SRC "${CMAKE_SOURCE_DIR}/src/bitset.c")
+set(BITSET_LIB ${PROJECT}Bitset)
+add_library(${BITSET_LIB} ${BITSET_SRC})
+target_include_directories(${BITSET_LIB} PUBLIC ${INCLUDE_PATH})
 
 # Container
 set(CONTAINER_SRC "${CMAKE_SOURCE_DIR}/src/container.c")
@@ -36,10 +36,10 @@ set(THREADPOOL_SRC "${CMAKE_SOURCE_DIR}/src/threadpool.c")
 set(THREADPOOL_LIB ${PROJECT}Threadpool)
 add_library(${THREADPOOL_LIB} ${THREADPOOL_SRC})
 target_include_directories(${THREADPOOL_LIB} PUBLIC ${INCLUDE_PATH})
-target_link_libraries(${THREADPOOL_LIB} ${DICTIONARY_LIB} ${EVENT_LIB} ${BITMAP_LIB})
+target_link_libraries(${THREADPOOL_LIB} ${DICTIONARY_LIB} ${EVENT_LIB} ${BITSET_LIB})
 
 # All
-set(PROJECT_SRC ${DICTIONARY_SRC} ${CONTAINER_SRC} ${EVENT_SRC} ${THREADPOOL_SRC} ${BITMAP_SRC})
+set(PROJECT_SRC ${DICTIONARY_SRC} ${CONTAINER_SRC} ${EVENT_SRC} ${THREADPOOL_SRC} ${BITSET_SRC})
 set(PROJECT_LIB ${PROJECT})
 add_library(${PROJECT_LIB} ${PROJECT_SRC})
 target_include_directories(${PROJECT_LIB} PUBLIC ${INCLUDE_PATH})
