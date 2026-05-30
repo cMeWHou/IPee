@@ -1,5 +1,6 @@
 #include <threadpool.h>
 
+#include <errno.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,7 +8,7 @@
 #include <time.h>
 
 #include <dictionary.h>
-#include <bitmap.h>
+#include <bitset.h>
 #include <event.h>
 #include <macro.h>
 
@@ -37,7 +38,7 @@ static void set_task_to_thread(p_thread thread, p_task task);
  * @param record Record.
  * @param _1 Unused.
  * @param _2 Unused.
- * @return Result of comparsion.
+ * @return 1 if thread is available, 0 otherwise.
  */
 static int filter_threads(const p_record record, int _1, const p_dictionary _2);
 
@@ -72,14 +73,19 @@ static void emit_on_complete(p_task task);
 static p_dictionary thread_pool = NULL;
 
 /**
- * @brief The task bitmap.
+ * @brief The task bitset.
  */
-static p_bitmap task_bitmap = NULL;
+static p_bitset task_bitset = NULL;
 
 /**
  * @brief The mutex.
  */
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+/**
+ * @brief Signaled when a thread becomes free.
+ */
+static pthread_cond_t pool_cond = PTHREAD_COND_INITIALIZER;
 
 /**
  * @brief The thread pool size.
@@ -106,46 +112,52 @@ static char *threadpool_complete_event_name = "on_complete";
  * FUNCTIONS DEFINITIONS
  ********************************************************************************************/
 
-void set_threadpool_size(int size) {
+int set_threadpool_size(int size) {
     if (thread_pool)
-        exit(IPEE_ERROR_CODE__THREADPOOL__SERVICE_ALREADY_INITIALIZED);
+        return IPEE_ERROR_CODE__THREADPOOL__SERVICE_ALREADY_INITIALIZED;
     THREAD_POOL_SIZE = size;
+    return 0;
 }
 
-void set_internal_task_counter_limit(int limit) {
+int set_internal_task_counter_limit(int limit) {
     if (thread_pool)
-        exit(IPEE_ERROR_CODE__THREADPOOL__SERVICE_ALREADY_INITIALIZED);
+        return IPEE_ERROR_CODE__THREADPOOL__SERVICE_ALREADY_INITIALIZED;
     INTERNAL_TASK_COUNTER_LIMIT = limit;
+    return 0;
 }
 
 void set_task_waiting_timeout(int timeout) {
     TASK_WAITING_TIMEOUT = timeout;
 }
 
-void init_thread_pool(void) {
-    if (!thread_pool) {
-        pthread_mutex_init(&mutex, NULL);
-        thread_pool = create_dictionary();
+int init_thread_pool(void) {
+    if (thread_pool)
+        return 0;
 
-        task_bitmap = init_bitmap(INTERNAL_TASK_COUNTER_LIMIT);
+    pthread_mutex_init(&mutex, NULL);
+    thread_pool = create_dictionary();
+    task_bitset = init_bitset(INTERNAL_TASK_COUNTER_LIMIT);
 
-        for (int i = 0; i < THREAD_POOL_SIZE; i++) {
-            pthread_mutex_lock(&mutex);
+    for (int i = 0; i < THREAD_POOL_SIZE; i++) {
+        pthread_mutex_lock(&mutex);
 
-            p_thread thread = (p_thread)malloc(sizeof(thread_t));
-            if (!thread)
-                exit(IPEE_ERROR_CODE__THREADPOOL__THREAD_CREATION_ERROR);
-
-            thread->is_buzy = 0;
-            thread->is_running = 1;
-            thread->task = NULL;
-
-            pthread_create(&thread->thread, NULL, task_invoker, thread);
-            add_record_to_dictionary(thread_pool, i, thread);
-
+        p_thread thread = (p_thread)malloc(sizeof(thread_t));
+        if (!thread) {
             pthread_mutex_unlock(&mutex);
+            return IPEE_ERROR_CODE__THREADPOOL__THREAD_CREATION_ERROR;
         }
+
+        thread->is_busy = 0;
+        thread->is_running = 1;
+        thread->task = NULL;
+        pthread_cond_init(&thread->cond, NULL);
+
+        pthread_create(&thread->thread, NULL, task_invoker, thread);
+        add_record_to_dictionary(thread_pool, i, thread);
+
+        pthread_mutex_unlock(&mutex);
     }
+    return 0;
 }
 
 p_task make_task(threadpool_task_callback callback, void *args) {
@@ -159,17 +171,23 @@ p_task make_task(threadpool_task_callback callback, void *args) {
     task->metadata = NULL;
 
     p_task_metadata metadata = (p_task_metadata)malloc(sizeof(task_metadata_t));
-    if (!metadata)
+    if (!metadata) {
+        free(task);
         return NULL;
+    }
 
-    int internal_task_counter = get_first_free_bit(task_bitmap);
-    if (internal_task_counter == -1)
+    int internal_task_counter = get_first_free_bit(task_bitset);
+    if (internal_task_counter == -1) {
+        free(metadata);
+        free(task);
         return NULL;
+    }
 
-    set_bit(task_bitmap, internal_task_counter);
+    set_bit(task_bitset, internal_task_counter);
 
     metadata->task_id = internal_task_counter;
-    metadata->task_event_name = prepare_event_name(threadpool_context_name, threadpool_complete_event_name, metadata->task_id);
+    metadata->task_event_name = prepare_event_name(
+        threadpool_context_name, threadpool_complete_event_name, metadata->task_id);
     metadata->callback = callback;
     metadata->args = args;
     metadata->thread = NULL;
@@ -186,37 +204,40 @@ p_task run_task(p_task task) {
 }
 
 p_task run_task_with_args(p_task task, void *args) {
-    if (!thread_pool)
-        exit(IPEE_ERROR_CODE__THREADPOOL__SERVICE_UNINITIALIZED);
-    if (!task)
-        exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_TASK);
+    if (!thread_pool || !task)
+        return NULL;
 
     pthread_mutex_lock(&mutex);
 
-    p_dictionary available_threads = NULL;
-    clock_t before = clock();
-    long current_timestamp = 0;
-    do {
-        clock_t diff = clock() - before;
-        current_timestamp = diff * 1000 / CLOCKS_PER_SEC;
+    struct timespec deadline;
+    clock_gettime(CLOCK_REALTIME, &deadline);
+    deadline.tv_sec  += TASK_WAITING_TIMEOUT / 1000;
+    deadline.tv_nsec += (TASK_WAITING_TIMEOUT % 1000) * 1000000L;
+    if (deadline.tv_nsec >= 1000000000L) {
+        deadline.tv_sec++;
+        deadline.tv_nsec -= 1000000000L;
+    }
 
-        if (available_threads)
-            delete_dictionary(available_threads);
+    p_dictionary available_threads = filter_dictionary(thread_pool, filter_threads);
+    while (!available_threads->size) {
+        delete_dictionary(available_threads);
+        if (pthread_cond_timedwait(&pool_cond, &mutex, &deadline) == ETIMEDOUT) {
+            pthread_mutex_unlock(&mutex);
+            return NULL;
+        }
         available_threads = filter_dictionary(thread_pool, filter_threads);
-    } while (!available_threads->size && current_timestamp < TASK_WAITING_TIMEOUT);
-
-    if (!available_threads->size) {
-        pthread_mutex_unlock(&mutex);
-        return NULL;
     }
 
     task->metadata->args = args;
     p_thread thread = get_head_value_from_dictionary(available_threads);
-    if (thread)
-        set_task_to_thread(thread, task);
-    else
-        exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_THREAD);
-    
+    delete_dictionary(available_threads);
+
+    if (!thread) {
+        pthread_mutex_unlock(&mutex);
+        return NULL;
+    }
+    set_task_to_thread(thread, task);
+
     pthread_mutex_unlock(&mutex);
 
     return task;
@@ -228,7 +249,7 @@ p_task start_task(threadpool_task_callback callback, void *args) {
 
 void *await_task(p_task task) {
     if (!task)
-        exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_TASK);
+        return NULL;
 
     p_task_metadata metadata = task->metadata;
 
@@ -260,7 +281,7 @@ void *await_task(p_task task) {
 
 int cancel_task(p_task task) {
     if (!thread_pool)
-        exit(IPEE_ERROR_CODE__THREADPOOL__SERVICE_UNINITIALIZED);
+        return IPEE_ERROR_CODE__THREADPOOL__SERVICE_UNINITIALIZED;
 
     if (!task || !task->metadata || !task->is_running)
         return 0;
@@ -274,7 +295,7 @@ int cancel_task(p_task task) {
         return 0;
 
     thread->task = NULL;
-    thread->is_buzy = 0;
+    thread->is_busy = 0;
     thread->is_running = 1;
     pthread_create(&thread->thread, NULL, task_invoker, thread);
 
@@ -285,16 +306,17 @@ int cancel_task(p_task task) {
 
 p_task on_complete(p_task task, threadpool_complete_callback complete_callback, void *args) {
     if (!task)
-        exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_TASK);
+        return NULL;
 
-    subscribe_with_args(threadpool_context_name, task->metadata->task_event_name, complete_callback, args);
+    subscribe_with_args(threadpool_context_name, task->metadata->task_event_name,
+                        (observable_callback_with_args)complete_callback, args);
 
     return task;
 }
 
 p_task on_final(p_task task, threadpool_release_callback release_callback) {
     if (!task)
-        exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_TASK);
+        return NULL;
 
     task->metadata->release_callback = release_callback;
 
@@ -303,7 +325,7 @@ p_task on_final(p_task task, threadpool_release_callback release_callback) {
 
 p_task as_immediate(p_task task) {
     if (!task)
-        exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_TASK);
+        return NULL;
 
     task->metadata->release_type = TASK_RELEASE_TYPE_IMMEDIATE;
 
@@ -312,24 +334,27 @@ p_task as_immediate(p_task task) {
 
 p_task as_manual(p_task task) {
     if (!task)
-        exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_TASK);
+        return NULL;
 
     task->metadata->release_type = TASK_RELEASE_TYPE_MANUAL;
 
     return task;
 }
 
-void destroy_thread_pool(void) {
+int destroy_thread_pool(void) {
     if (!thread_pool)
-        exit(IPEE_ERROR_CODE__THREADPOOL__SERVICE_UNINITIALIZED);
+        return IPEE_ERROR_CODE__THREADPOOL__SERVICE_UNINITIALIZED;
 
-    iterate_over_dictionary_values(thread_pool, destroy_thread);
+    iterate_over_dictionary_values(
+        thread_pool, (dictionary_iteration_values_callback)destroy_thread);
+    pthread_cond_destroy(&pool_cond);
     pthread_mutex_destroy(&mutex);
     delete_dictionary(thread_pool);
-    release_bitmap(task_bitmap);
+    release_bitset(task_bitset);
 
-    task_bitmap = NULL;
+    task_bitset = NULL;
     thread_pool = NULL;
+    return 0;
 }
 
 /***********************************************************************************************
@@ -338,75 +363,84 @@ void destroy_thread_pool(void) {
 
 static void *task_invoker(p_thread thread) {
     if (!thread)
-        exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_THREAD);
+        return NULL;
 
+    pthread_mutex_lock(&mutex);
     while (thread->is_running) {
+        while (thread->is_running && !thread->task)
+            pthread_cond_wait(&thread->cond, &mutex);
+
+        if (!thread->task)
+            break;
+
         p_task task = thread->task;
-        if (!task || task->is_running)
-            continue;
-        task->is_running = 1;
+        pthread_mutex_unlock(&mutex);
 
         p_task_metadata metadata = task->metadata;
-        if (!metadata)
-            continue;
-
-        void *result = metadata->callback(metadata->args);
-        task->result = result;
-        task->is_done = 1;
-        if (task->metadata->release_type == TASK_RELEASE_TYPE_IMMEDIATE) {
-            emit_on_complete(task);
-            if (task->metadata->release_callback)
-                task->metadata->release_callback(task);
+        if (metadata) {
+            task->is_running = 1;
+            void *result = metadata->callback(metadata->args);
+            task->result = result;
+            task->is_done = 1;
+            if (task->metadata->release_type == TASK_RELEASE_TYPE_IMMEDIATE) {
+                emit_on_complete(task);
+                if (task->metadata->release_callback)
+                    task->metadata->release_callback(task);
+            }
         }
+
+        pthread_mutex_lock(&mutex);
         thread->task = NULL;
-        thread->is_buzy = 0;
+        thread->is_busy = 0;
+        pthread_cond_signal(&pool_cond);
     }
+    pthread_mutex_unlock(&mutex);
 
     pthread_exit(NULL);
     return NULL;
 }
 
 static void set_task_to_thread(p_thread thread, p_task task) {
-    if (!thread)
-        exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_THREAD);
-    if (!task)
-        exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_TASK);
+    if (!thread || !task)
+        return;
 
-    thread->is_buzy = 1;
+    thread->is_busy = 1;
     thread->task = task;
     task->metadata->thread = thread;
+    pthread_cond_signal(&thread->cond);
 }
 
 static int filter_threads(const p_record record, int _1, const p_dictionary _2) {
-    const p_thread thread = (p_thread)record->value;
     if (!record || !record->value)
-        exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_THREAD);
+        return 0;
 
-    return !thread->is_buzy;
+    const p_thread thread = (p_thread)record->value;
+    return !thread->is_busy;
 }
 
 static void destroy_thread(p_thread thread) {
     if (!thread)
-        exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_THREAD);
+        return;
 
     pthread_mutex_lock(&mutex);
-
     thread->is_running = 0;
-    pthread_cancel(thread->thread);
-    free(thread);
-
+    pthread_cond_signal(&thread->cond);
     pthread_mutex_unlock(&mutex);
+
+    pthread_join(thread->thread, NULL);
+    pthread_cond_destroy(&thread->cond);
+    free(thread);
 }
 
 static void default_task_release_callback(p_task task) {
     if (!task || !task->metadata)
-        exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_TASK);
+        return;
 
     p_task_metadata metadata = task->metadata;
     free(task->metadata->task_event_name);
     task->metadata->task_event_name = NULL;
     task->metadata->thread = NULL;
-    reset_bit(task_bitmap, task->metadata->task_id);
+    reset_bit(task_bitset, task->metadata->task_id);
     free(metadata);
 
     task->metadata = NULL;
@@ -418,7 +452,7 @@ static void default_task_release_callback(p_task task) {
 
 static void emit_on_complete(p_task task) {
     if (!task)
-        exit(IPEE_ERROR_CODE__THREADPOOL__INVALID_TASK);
+        return;
 
     const char *event_name = task->metadata->task_event_name;
     p_dictionary subscribers = get_context_event_subscribers(threadpool_context_name, event_name);

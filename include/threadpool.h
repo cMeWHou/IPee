@@ -14,6 +14,18 @@
 #include <pthread.h>
 
 /*********************************************************************************************
+ * ERROR CODES
+ ********************************************************************************************/
+
+typedef enum ipee_threadpool_error_code_e {
+    IPEE_ERROR_CODE__THREADPOOL__SERVICE_UNINITIALIZED       = -1, // Threadpool is not initialized.
+    IPEE_ERROR_CODE__THREADPOOL__SERVICE_ALREADY_INITIALIZED = -2, // Threadpool is already initialized.
+    IPEE_ERROR_CODE__THREADPOOL__THREAD_CREATION_ERROR       = -3, // Failed to create thread.
+    IPEE_ERROR_CODE__THREADPOOL__INVALID_THREAD              = -4, // Thread is invalid.
+    IPEE_ERROR_CODE__THREADPOOL__INVALID_TASK                = -5, // Task is invalid.
+} ipee_threadpool_error_code_t, *p_threadpool_error_code;
+
+/*********************************************************************************************
  * STRUCTS DECLARATIONS
  ********************************************************************************************/
 
@@ -57,7 +69,8 @@ typedef struct task_s {
  */
 typedef struct thread_s {
     pthread_t thread;        // Thread Id.
-    int is_buzy;             // Thread is buzy.
+    pthread_cond_t cond;     // Condition variable for task assignment.
+    int is_busy;             // Thread is buzy.
     volatile int is_running; // Thread is running.
     volatile p_task task;    // Current task.
 } thread_t, *p_thread;
@@ -73,7 +86,7 @@ typedef struct thread_s {
  * @param args Task arguments.
  * @return Task result.
  */
-typedef void *(threadpool_task_callback)(void *args);
+typedef void *(*threadpool_task_callback)(void *args);
 
 /**
  * @brief Task complete callback.
@@ -82,7 +95,7 @@ typedef void *(threadpool_task_callback)(void *args);
  * @param result Task result.
  * @param args Captured arguments.
  */
-typedef void(threadpool_complete_callback)(void *result, void *args);
+typedef void *(*threadpool_complete_callback)(void *result, void *args);
 
 /**
  * @brief Task release callback.
@@ -90,7 +103,7 @@ typedef void(threadpool_complete_callback)(void *result, void *args);
  *
  * @param task Task.
  */
-typedef void(threadpool_release_callback)(p_task task);
+typedef void (*threadpool_release_callback)(p_task task);
 
 /*********************************************************************************************
  * FUNCTIONS DECLARATIONS
@@ -101,14 +114,15 @@ typedef void(threadpool_release_callback)(p_task task);
  *
  * @param size Thread pool size.
  */
-extern void set_threadpool_size(int size);
+extern int set_threadpool_size(int size);
 
 /**
  * @brief Set internal task counter limit.
  *
  * @param limit Internal task counter limit.
+ * @return 0 on success, or a negative error code.
  */
-extern void set_internal_task_counter_limit(int limit);
+extern int set_internal_task_counter_limit(int limit);
 
 /**
  * @brief Set task waiting timeout.
@@ -119,8 +133,9 @@ extern void set_task_waiting_timeout(int timeout);
 
 /**
  * @brief Initialize thread pool.
+ * @return 0 on success, or a negative error code.
  */
-extern void init_thread_pool(void);
+extern int init_thread_pool(void);
 
 /**
  * @brief Create new task.
@@ -216,7 +231,8 @@ extern void *await_task(p_task task);
 
 /**
  * @brief Destroy task pool.
+ * @return 0 on success, or a negative error code.
  */
-extern void destroy_thread_pool(void);
+extern int destroy_thread_pool(void);
 
 #endif // IPEE_THREADPOOL_H
