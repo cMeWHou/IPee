@@ -13,6 +13,18 @@
 
 #include <dictionary.h>
 
+/*********************************************************************************************
+ * ERROR CODES
+ ********************************************************************************************/
+
+typedef enum ipee_event_error_code_e {
+    IPEE_ERROR_CODE__EVENT__SERVICE_UNINITIALIZED = -1, // Event service is not initialized.
+    IPEE_ERROR_CODE__EVENT__CONTEXT_NOT_EXISTS    = -2, // Event context does not exist.
+    IPEE_ERROR_CODE__EVENT__NOT_EXISTS            = -3, // Event does not exist.
+    IPEE_ERROR_CODE__EVENT__INVALID_CALLBACK      = -4, // Callback is invalid.
+    IPEE_ERROR_CODE__EVENT__NAME_CREATION_ERROR   = -5, // Failed to create event name.
+} ipee_event_error_code_t, *p_event_error_code;
+
 /***********************************************************************************************
  * FUNCTION TYPEDEFS
  **********************************************************************************************/
@@ -120,7 +132,7 @@ extern void subscribe_with_args(
  *
  * @param event Event to unsubscribe from.
  */
-extern void global_unsubscribe(const char *event, observable_callback callback);
+extern int global_unsubscribe(const char *event, observable_callback callback);
 
 /**
  * @brief Unsubscribe from event.
@@ -130,51 +142,47 @@ extern void global_unsubscribe(const char *event, observable_callback callback);
  *
  * @param context Context to unsubscribe from.
  * @param event Event to unsubscribe from.
+ * @param callback Callback to unsubscribe.
+ * @return 0 on success, or a negative error code.
  */
-extern void unsubscribe(const char *context, 
+extern int unsubscribe(const char *context,
     const char *event, observable_callback callback);
 
 /**
- * @brief Unsubscribe from event.
+ * @brief Unsubscribe all callbacks from event.
  *
- * @details
- * Unsubscribes from event in the context.
- *
- * @param context Context to unsubscribe from.
- * @param event Event to unsubscribe from.
+ * @param context Context name.
+ * @param event Event name.
+ * @return 0 on success, or a negative error code.
  */
-extern void unsubscribe_from_event(const char *context, const char *event);
+extern int unsubscribe_from_event(const char *context, const char *event);
 
 /**
- * @brief Unsubscribe from context.
+ * @brief Unsubscribe all callbacks from context.
  *
- * @details
- * Unsubscribes from context.
- *
- * @param context Context to unsubscribe from.
+ * @param context Context name.
+ * @return 0 on success, or a negative error code.
  */
-extern void unsubscribe_from_context(const char *context);
+extern int unsubscribe_from_context(const char *context);
 
 /**
- * @brief Unsubscribe from event globally.
+ * @brief Notify all global subscribers of an event.
  *
- * @details
- * Unsubscribes from event globally.
- *
- * @param event Event to unsubscribe from.
+ * @param event Event name.
+ * @param args Arguments passed to each callback.
+ * @return 0 on success, or a negative error code.
  */
-extern void global_notify(const char *event, void *args);
+extern int global_notify(const char *event, void *args);
 
 /**
- * @brief Unsubscribe from event.
+ * @brief Notify all subscribers of an event in a context.
  *
- * @details
- * Unsubscribes from event in the context.
- *
- * @param context Context to unsubscribe from.
- * @param event Event to unsubscribe from.
+ * @param context Context name.
+ * @param event Event name.
+ * @param args Arguments passed to each callback.
+ * @return 0 on success, or a negative error code.
  */
-extern void notify(const char *context, const char *event, void *args);
+extern int notify(const char *context, const char *event, void *args);
 
 /**
  * @brief Prepare event name.
