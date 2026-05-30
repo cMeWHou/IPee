@@ -14,6 +14,16 @@
 #include <dictionary.h>
 
 /*********************************************************************************************
+ * ERROR CODES
+ ********************************************************************************************/
+
+typedef enum ipee_container_error_code_e {
+    IPEE_ERROR_CODE__CONTAINER__SERVICE_UNINITIALIZED       = -1, // Container is not initialized.
+    IPEE_ERROR_CODE__CONTAINER__SERVICE_ALREADY_INITIALIZED = -2, // Container is already initialized.
+    IPEE_ERROR_CODE__CONTAINER__NOT_EXISTS                  = -3, // Container does not exist.
+} ipee_container_error_code_t, *p_container_error_code;
+
+/*********************************************************************************************
  * STRUCTS DECLARATIONS
  ********************************************************************************************/
 
@@ -56,9 +66,9 @@ typedef void *(*container_callback_function)(void *args);
  ********************************************************************************************/
 
 /**
- * @brief Set max transient service count.
+ * @brief Set max service count per container.
  *
- * @param count Max transient service count.
+ * @param count Max service count.
  */
 
 extern void set_max_service_count(int count);

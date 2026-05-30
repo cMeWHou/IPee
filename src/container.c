@@ -132,22 +132,21 @@ void release_container(p_container container) {
 
     p_application_container app_container = (p_application_container)container;
     pthread_mutex_lock(&app_container->mutex);
-    if (app_container) {
-        iterate_over_dictionary_with_args(
-            app_container->elements_release_callback, (void *)release_service, app_container);
-        delete_dictionary(app_container->services);
-        app_container->services = NULL;
-        delete_dictionary(app_container->elements_types);
-        app_container->elements_types = NULL;
-        delete_dictionary(app_container->elements_initial_callback);
-        app_container->elements_initial_callback = NULL;
-        delete_dictionary(app_container->elements_release_callback);
-        app_container->elements_release_callback = NULL;
-        delete_dictionary(app_container->elements_args);
-        app_container->elements_args = NULL;
-        delete_dictionary(app_container->elements_refs);
-        app_container->elements_refs = NULL;
-    }
+    iterate_over_dictionary_with_args(
+        app_container->elements_release_callback,
+        (dictionary_iteration_callback_with_args)release_service, app_container);
+    delete_dictionary(app_container->services);
+    app_container->services = NULL;
+    delete_dictionary(app_container->elements_types);
+    app_container->elements_types = NULL;
+    delete_dictionary(app_container->elements_initial_callback);
+    app_container->elements_initial_callback = NULL;
+    delete_dictionary(app_container->elements_release_callback);
+    app_container->elements_release_callback = NULL;
+    delete_dictionary(app_container->elements_args);
+    app_container->elements_args = NULL;
+    delete_dictionary(app_container->elements_refs);
+    app_container->elements_refs = NULL;
     pthread_mutex_unlock(&app_container->mutex);
     pthread_mutex_destroy(&app_container->mutex);
     remove_record_from_dictionary(containers, container->name);
@@ -276,49 +275,51 @@ void add_service_to_container(
     if (!container)
         exit(IPEE_ERROR_CODE__CONTAINER__NOT_EXISTS);
 
-    if (container->services->size >= MAX_CONTAINER_SIZE)
-        return;
-
     p_application_container app_container = (p_application_container)container;
     pthread_mutex_lock(&app_container->mutex);
-    if (app_container) {
-        container_callback_function callback = get_value_from_dictionary(
-            app_container->elements_release_callback, key);
-        if (callback)
-            release_service(key, callback, container);
 
-        switch (type) {
-        case SERVICE_TYPE_SINGLETON:
-            add_record_to_dictionary(app_container->services,
-                                     app_container->services->size, key);
-            add_record_to_dictionary(app_container->elements_types, key, (void *)SERVICE_TYPE_SINGLETON);
-            add_record_to_dictionary(app_container->elements_initial_callback, key, initial_callback);
-            add_record_to_dictionary(app_container->elements_release_callback, key, release_callback);
-            add_record_to_dictionary(app_container->elements_refs, key, NULL);
-            add_record_to_dictionary(app_container->elements_args, key, args);
-            break;
+    int is_replacement = contains_key_in_dictionary(app_container->elements_types, key);
+    if (!is_replacement && container->services->size >= MAX_CONTAINER_SIZE) {
+        pthread_mutex_unlock(&app_container->mutex);
+        return;
+    }
 
-        case SERVICE_TYPE_TRANSIENT:
-            add_record_to_dictionary(app_container->services, app_container->services->size, key);
-            add_record_to_dictionary(app_container->elements_types, key, (void *)SERVICE_TYPE_TRANSIENT);
-            add_record_to_dictionary(app_container->elements_initial_callback, key, initial_callback);
-            add_record_to_dictionary(app_container->elements_release_callback, key, release_callback);
-            add_record_to_dictionary(app_container->elements_refs, key, create_dictionary());
-            add_record_to_dictionary(app_container->elements_args, key, args);
-            break;
+    container_callback_function callback = get_value_from_dictionary(
+        app_container->elements_release_callback, key);
+    if (callback)
+        release_service(key, callback, container);
 
-        case SERVICE_TYPE_GLBLVALUE:
-            add_record_to_dictionary(app_container->services, app_container->services->size, key);
-            add_record_to_dictionary(app_container->elements_types, key, (void *)SERVICE_TYPE_GLBLVALUE);
-            add_record_to_dictionary(app_container->elements_initial_callback, key, NULL);
-            add_record_to_dictionary(app_container->elements_release_callback, key, release_callback);
-            add_record_to_dictionary(app_container->elements_args, key, args);
-            break;
+    switch (type) {
+    case SERVICE_TYPE_SINGLETON:
+        add_record_to_dictionary(app_container->services,
+                                 app_container->services->size, key);
+        add_record_to_dictionary(app_container->elements_types, key, (void *)SERVICE_TYPE_SINGLETON);
+        add_record_to_dictionary(app_container->elements_initial_callback, key, initial_callback);
+        add_record_to_dictionary(app_container->elements_release_callback, key, release_callback);
+        add_record_to_dictionary(app_container->elements_refs, key, NULL);
+        add_record_to_dictionary(app_container->elements_args, key, args);
+        break;
 
-        default:
-            exit(-1);
-            break;
-        }
+    case SERVICE_TYPE_TRANSIENT:
+        add_record_to_dictionary(app_container->services, app_container->services->size, key);
+        add_record_to_dictionary(app_container->elements_types, key, (void *)SERVICE_TYPE_TRANSIENT);
+        add_record_to_dictionary(app_container->elements_initial_callback, key, initial_callback);
+        add_record_to_dictionary(app_container->elements_release_callback, key, release_callback);
+        add_record_to_dictionary(app_container->elements_refs, key, create_dictionary());
+        add_record_to_dictionary(app_container->elements_args, key, args);
+        break;
+
+    case SERVICE_TYPE_GLBLVALUE:
+        add_record_to_dictionary(app_container->services, app_container->services->size, key);
+        add_record_to_dictionary(app_container->elements_types, key, (void *)SERVICE_TYPE_GLBLVALUE);
+        add_record_to_dictionary(app_container->elements_initial_callback, key, NULL);
+        add_record_to_dictionary(app_container->elements_release_callback, key, release_callback);
+        add_record_to_dictionary(app_container->elements_args, key, args);
+        break;
+
+    default:
+        exit(-1);
+        break;
     }
     pthread_mutex_unlock(&app_container->mutex);
 }
@@ -365,6 +366,7 @@ void *get_service_from_container_with_args(
         app_container->elements_types, key);
     switch (type) {
     case SERVICE_TYPE_SINGLETON:
+        pthread_mutex_lock(&app_container->mutex);
         void *instance = get_value_from_dictionary(app_container->elements_refs, key);
         if (!instance) {
             container_callback_function initial_callback = get_value_from_dictionary(
@@ -376,7 +378,7 @@ void *get_service_from_container_with_args(
             instance = initial_callback(args);
             update_record_in_dictionary(app_container->elements_refs, key, instance);
         }
-
+        pthread_mutex_unlock(&app_container->mutex);
         return instance;
 
     case SERVICE_TYPE_TRANSIENT:
@@ -409,6 +411,8 @@ void *get_service_from_container_with_args(
     default:
         break;
     }
+
+    return NULL;
 }
 
 void *get_service_from_container_by_name(const char *name, char *key) {
@@ -445,13 +449,13 @@ static void release_service(
     case SERVICE_TYPE_TRANSIENT:
         p_dictionary refs = get_value_from_dictionary(container->elements_refs, key);
         if (refs && callback)
-            iterate_over_dictionary_values(refs, (void *)callback);
+            iterate_over_dictionary_values(refs, (dictionary_iteration_values_callback)callback);
         delete_dictionary(refs);
         refs = NULL;
         break;
 
     case SERVICE_TYPE_GLBLVALUE:
-        const char args = get_value_from_dictionary(container->elements_args, key);
+        void *args = get_value_from_dictionary(container->elements_args, key);
         if (callback)
             callback(args);
         break;
