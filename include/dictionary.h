@@ -12,6 +12,16 @@
 #define IPEE_DICTIONARY_H
 
 /*********************************************************************************************
+ * ERROR CODES
+ ********************************************************************************************/
+
+typedef enum ipee_dictionary_error_code_e {
+    IPEE_ERROR_CODE__DICTIONARY__NOT_EXISTS            = -1, // Dictionary does not exist.
+    IPEE_ERROR_CODE__DICTIONARY__INDEX_OUT_OF_RANGE    = -2, // Index is out of valid range.
+    IPEE_ERROR_CODE__DICTIONARY__RECORD_CREATION_ERROR = -3, // Failed to allocate a record.
+} ipee_dictionary_error_code_t, *p_dictionary_error_code;
+
+/*********************************************************************************************
  * STRUCTS DECLARATIONS
  ********************************************************************************************/
 
@@ -33,7 +43,7 @@ typedef struct record_s {
     struct record_s *prev; // Previous node reference.
     char *key;             // String key.
     void *value;           // Any type value.
-    void *metadata;        // Metadata.
+    void *metadata;        // Record metadata.
 } record_t, *p_record;
 
 /**
@@ -53,7 +63,7 @@ typedef struct dictionary_s {
     p_record head;  // Head of the dictionary.
     p_record tail;  // Tail of the dictionary.
     int size;       // Size of the dictionary.
-    void *metadata; // Metadata.
+    void *metadata; // Dictionary metadata.
 } dictionary_t, *p_dictionary;
 
 /***********************************************************************************************
@@ -155,7 +165,7 @@ typedef p_record (*dictionary_iteration_callback_map_with_args)(
  * @param record Record.
  * @param index Record index.
  * @param dict Dictionary.
- * @return Result of comparsion.
+ * @return Result of comparison.
  */
 typedef int (*dictionary_iteration_callback_filter)(
     const p_record record, int index, const p_dictionary dict);
@@ -167,7 +177,7 @@ typedef int (*dictionary_iteration_callback_filter)(
  * @param index Record index.
  * @param dict Dictionary.
  * @param args Arguments for callback function.
- * @return Result of comparsion.
+ * @return Result of comparison.
  */
 typedef int (*dictionary_iteration_callback_filter_with_args)(
     const p_record record, int index, const p_dictionary dict, void *args);
@@ -175,26 +185,30 @@ typedef int (*dictionary_iteration_callback_filter_with_args)(
 /**
  * @brief Callback function for reducing records of collection.
  *
+ * @details
+ * The callback receives the accumulator by pointer and is expected to mutate it.
+ *
  * @param acc Accumulator.
  * @param record Record.
  * @param index Record index.
  * @param dict Dictionary.
- * @return Reduced record.
  */
-typedef p_record (*dictionary_iteration_callback_reduce)(
+typedef void (*dictionary_iteration_callback_reduce)(
     void *acc, const p_record record, int index, const p_dictionary dict);
 
 /**
  * @brief Callback function for reducing records of collection.
+ *
+ * @details
+ * The callback receives the accumulator by pointer and is expected to mutate it.
  *
  * @param acc Accumulator.
  * @param record Record.
  * @param index Record index.
  * @param dict Dictionary.
  * @param args Arguments for callback function.
- * @return Reduced record.
  */
-typedef p_record (*dictionary_iteration_callback_reduce_with_args)(
+typedef void (*dictionary_iteration_callback_reduce_with_args)(
     void *acc, const p_record record, int index, const p_dictionary dict, void *args);
 
 /**
@@ -202,7 +216,7 @@ typedef p_record (*dictionary_iteration_callback_reduce_with_args)(
  *
  * @param record1 Record 1.
  * @param record2 Record 2.
- * @return Result of comparsion.
+ * @return Result of comparison.
  */
 typedef int (*dictionary_iteration_callback_sort)(
     const p_record record1, const p_record record2);
@@ -213,7 +227,7 @@ typedef int (*dictionary_iteration_callback_sort)(
  * @param record1 Record 1.
  * @param record2 Record 2.
  * @param args Arguments for callback function.
- * @return Result of comparsion.
+ * @return Result of comparison.
  */
 typedef int (*dictionary_iteration_callback_sort_with_args)(
     const p_record record1, const p_record record2, void *args);
@@ -254,18 +268,7 @@ extern p_dictionary create_dictionary_with_metadata(void *metadata);
  *
  * @param dict Dictionary object.
  */
-extern void delete_dictionary(p_dictionary dict);
-
-/**
- * @brief Delete dictionary.
- *
- * @details
- * Delete dictionary and all its records.
- * Also set null to dictionary-pointer.
- *
- * @param dict Dictionary object reference.
- */
-extern void delete_dictionary_set_null(p_dictionary *dict);
+extern int delete_dictionary(p_dictionary dict);
 
 /**
  * @brief Add record to dictionary.
@@ -278,7 +281,7 @@ extern void delete_dictionary_set_null(p_dictionary *dict);
  * @param key Record key.
  * @param value Record value.
  */
-extern void add_record_to_dictionary(const p_dictionary dict, char *key, void *value);
+extern int add_record_to_dictionary(const p_dictionary dict, char *key, void *value);
 
 /**
  * @brief Add record to begin of dictionary.
@@ -291,7 +294,7 @@ extern void add_record_to_dictionary(const p_dictionary dict, char *key, void *v
  * @param key Record key.
  * @param value Record value.
  */
-extern void emplace_record_to_dictionary(const p_dictionary dict, char *key, void *value);
+extern int emplace_record_to_dictionary(const p_dictionary dict, char *key, void *value);
 
 /**
  * @brief Add record to dictionary.
@@ -305,7 +308,7 @@ extern void emplace_record_to_dictionary(const p_dictionary dict, char *key, voi
  * @param value Record value.
  * @param metadata Record metadata.
  */
-extern void add_record_to_dictionary_with_metadata(
+extern int add_record_to_dictionary_with_metadata(
     const p_dictionary dict, char *key, void *value, void *metadata);
 
 /**
@@ -320,7 +323,7 @@ extern void add_record_to_dictionary_with_metadata(
  * @param value Record value.
  * @param metadata Record metadata.
  */
-extern void emplace_record_to_dictionary_with_metadata(
+extern int emplace_record_to_dictionary_with_metadata(
     const p_dictionary dict, char *key, void *value, void *metadata);
 
 /**
@@ -335,7 +338,7 @@ extern void emplace_record_to_dictionary_with_metadata(
  * @param key Record key.
  * @param value Record value.
  */
-extern void add_record_to_dictionary_by_index(
+extern int add_record_to_dictionary_by_index(
     const p_dictionary dict, int index, char *key, void *value);
 
 /**
@@ -351,7 +354,7 @@ extern void add_record_to_dictionary_by_index(
  * @param value Record value.
  * @param metadata Record metadata.
  */
-extern void add_record_to_dictionary_by_index_with_metadata(
+extern int add_record_to_dictionary_by_index_with_metadata(
     const p_dictionary dict, int index, char *key, void *value, void *metadata);
 
 /**
@@ -500,7 +503,7 @@ extern void *get_prev_value_from_dictionary(const p_dictionary dict, char *key);
  * @param dict Dictionary.
  * @return Record key.
  */
-extern void *get_head_key_from_dictionary(const p_dictionary dict);
+extern char *get_head_key_from_dictionary(const p_dictionary dict);
 
 /**
  * @brief Get tail key from dictionary.
@@ -512,7 +515,7 @@ extern void *get_head_key_from_dictionary(const p_dictionary dict);
  * @param dict Dictionary.
  * @return Record key.
  */
-extern void *get_tail_key_from_dictionary(const p_dictionary dict);
+extern char *get_tail_key_from_dictionary(const p_dictionary dict);
 
 /**
  * @brief Get key of next record after the current one.
@@ -525,7 +528,7 @@ extern void *get_tail_key_from_dictionary(const p_dictionary dict);
  * @param key Record key.
  * @return Next record key.
  */
-extern void *get_next_key_from_dictionary(const p_dictionary dict, char *key);
+extern char *get_next_key_from_dictionary(const p_dictionary dict, char *key);
 
 /**
  * @brief Get key of previous record before the current one.
@@ -539,7 +542,7 @@ extern void *get_next_key_from_dictionary(const p_dictionary dict, char *key);
  * @param key Record key.
  * @return Previous record key.
  */
-extern void *get_prev_key_from_dictionary(const p_dictionary dict, char *key);
+extern char *get_prev_key_from_dictionary(const p_dictionary dict, char *key);
 
 /**
  * @brief Get record from dictionary.
@@ -666,7 +669,7 @@ extern int get_index_from_dictionary_by_ref_record(const p_dictionary dict, p_re
  * @param dict Dictionary.
  * @param callback Callback function.
  */
-extern void iterate_over_dictionary(const p_dictionary dict, dictionary_iteration_callback callback);
+extern int iterate_over_dictionary(const p_dictionary dict, dictionary_iteration_callback callback);
 
 /**
  * @brief Iterate over dictionary with arguments.
@@ -679,7 +682,7 @@ extern void iterate_over_dictionary(const p_dictionary dict, dictionary_iteratio
  * @param callback Callback function.
  * @param args Arguments for callback function.
  */
-extern void iterate_over_dictionary_with_args(
+extern int iterate_over_dictionary_with_args(
     const p_dictionary dict, dictionary_iteration_callback_with_args callback, void *args);
 
 /**
@@ -692,7 +695,7 @@ extern void iterate_over_dictionary_with_args(
  * @param dict Dictionary.
  * @param callback Callback function.
  */
-extern void iterate_over_dictionary_keys(
+extern int iterate_over_dictionary_keys(
     const p_dictionary dict, dictionary_iteration_keys_callback callback);
 
 /**
@@ -706,7 +709,7 @@ extern void iterate_over_dictionary_keys(
  * @param callback Callback function.
  * @param args Arguments for callback function.
  */
-extern void iterate_over_dictionary_keys_with_args(
+extern int iterate_over_dictionary_keys_with_args(
     const p_dictionary dict, dictionary_iteration_keys_callback_with_args callback, void *args);
 
 /**
@@ -719,7 +722,7 @@ extern void iterate_over_dictionary_keys_with_args(
  * @param dict Dictionary.
  * @param callback Callback function.
  */
-extern void iterate_over_dictionary_values(
+extern int iterate_over_dictionary_values(
     const p_dictionary dict, dictionary_iteration_values_callback callback);
 
 /**
@@ -733,7 +736,7 @@ extern void iterate_over_dictionary_values(
  * @param callback Callback function.
  * @param args Arguments for callback function.
  */
-extern void iterate_over_dictionary_values_with_args(
+extern int iterate_over_dictionary_values_with_args(
     const p_dictionary dict, dictionary_iteration_values_callback_with_args callback, void *args);
 
 /**
@@ -746,7 +749,7 @@ extern void iterate_over_dictionary_values_with_args(
  * @param dict Dictionary.
  * @param callback Callback function.
  */
-extern void iterate_over_dictionary_records(
+extern int iterate_over_dictionary_records(
     const p_dictionary dict, dictionary_iteration_records_callback callback);
 
 /**
@@ -760,7 +763,7 @@ extern void iterate_over_dictionary_records(
  * @param callback Callback function.
  * @param args Arguments for callback function.
  */
-extern void iterate_over_dictionary_records_with_args(
+extern int iterate_over_dictionary_records_with_args(
     const p_dictionary dict, dictionary_iteration_records_callback_with_args callback, void *args);
 
 /**
@@ -831,7 +834,7 @@ extern p_dictionary filter_dictionary_with_args(
  * @param dict Dictionary.
  * @param callback Callback function.
  * @param acc Initial accumulator value.
- * @return Reduced dictionary.
+ * @return Accumulator.
  */
 extern void *reduce_dictionary(
     const p_dictionary dict, dictionary_iteration_callback_reduce callback, void *acc);
@@ -847,7 +850,7 @@ extern void *reduce_dictionary(
  * @param callback Callback function.
  * @param acc Initial accumulator value.
  * @param args Arguments for callback function.
- * @return Reduced dictionary.
+ * @return Accumulator.
  */
 extern void *reduce_dictionary_with_args(
     const p_dictionary dict,
