@@ -18,6 +18,15 @@
 #include <stdint.h>
 
 /*********************************************************************************************
+ * ERROR CODES
+ ********************************************************************************************/
+
+typedef enum ipee_hashmap_error_code_e {
+    IPEE_ERROR_CODE__HASHMAP__NOT_EXISTS       = -1, // Hashmap does not exist.
+    IPEE_ERROR_CODE__HASHMAP__ALLOCATION_ERROR = -2, // Failed to allocate hashmap memory.
+} ipee_hashmap_error_code_t, *p_hashmap_error_code;
+
+/*********************************************************************************************
  * MACROS DECLARATIONS
  ********************************************************************************************/
 
