@@ -118,7 +118,12 @@ p_container init_container(const char *name) {
     app_container->elements_release_callback = create_dictionary();
     app_container->elements_args = create_dictionary();
     app_container->elements_refs = create_dictionary();
-    pthread_mutex_init(&app_container->mutex, NULL);
+
+    pthread_mutexattr_t mutex_attr;
+    pthread_mutexattr_init(&mutex_attr);
+    pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_RECURSIVE);
+    pthread_mutex_init(&app_container->mutex, &mutex_attr);
+    pthread_mutexattr_destroy(&mutex_attr);
 
     add_record_to_dictionary(containers, name, app_container);
 
